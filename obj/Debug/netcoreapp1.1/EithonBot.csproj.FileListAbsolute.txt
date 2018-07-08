@@ -1,0 +1,9 @@
+C:\Git\Discord\EithonBot\EithonBot\bin\Debug\netcoreapp1.1\EithonBot.deps.json
+C:\Git\Discord\EithonBot\EithonBot\bin\Debug\netcoreapp1.1\EithonBot.runtimeconfig.json
+C:\Git\Discord\EithonBot\EithonBot\bin\Debug\netcoreapp1.1\EithonBot.runtimeconfig.dev.json
+C:\Git\Discord\EithonBot\EithonBot\bin\Debug\netcoreapp1.1\EithonBot.dll
+C:\Git\Discord\EithonBot\EithonBot\obj\Debug\netcoreapp1.1\EithonBot.csprojResolveAssemblyReference.cache
+C:\Git\Discord\EithonBot\EithonBot\obj\Debug\netcoreapp1.1\EithonBot.AssemblyInfo.cs
+C:\Git\Discord\EithonBot\EithonBot\bin\Debug\netcoreapp1.1\EithonBot.pdb
+C:\Git\Discord\EithonBot\EithonBot\obj\Debug\netcoreapp1.1\EithonBot.dll
+C:\Git\Discord\EithonBot\EithonBot\obj\Debug\netcoreapp1.1\EithonBot.pdb
