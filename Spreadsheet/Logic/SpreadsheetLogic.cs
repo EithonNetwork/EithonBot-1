@@ -14,10 +14,11 @@ using Data = Google.Apis.Sheets.v4.Data;
 using System.Linq;
 using static EithonBot.Models.Weekday;
 using EithonBot.Models;
+using EithonBot.Spreadsheet.Handler;
 
 namespace EithonBot
 {
-    class SpreadsheetHandler
+    public class SpreadsheetLogic
     {
         // If modifying these scopes, delete your previously saved credentials
         // at ~/.credentials/sheets.googleapis.com-dotnet-quickstart.json
@@ -25,15 +26,17 @@ namespace EithonBot
         static string ApplicationName = "Discord integration";
         private string _spreadsheetId;
         private string _sheetName;
+        private int _columnHeadersRow;
+        private IList<IList<object>> _columnHeaders;
+        private IList<IList<object>> _familyNames;
         private SheetsService _service;
 
-        public SpreadsheetHandler(string spreadsheetId, string sheetName)
+        public SpreadsheetLogic(string spreadsheetId, string sheetName, string familyNamesColumn, int columnHeadersRow)
         {
             _spreadsheetId = spreadsheetId;
             _sheetName = sheetName;
 
             UserCredential credential;
-
             using (var stream =
                 new FileStream("client_secret.json", FileMode.Open, FileAccess.Read))
             {
@@ -56,69 +59,52 @@ namespace EithonBot
                 HttpClientInitializer = credential,
                 ApplicationName = ApplicationName,
             });
-        }
 
-        internal async void UpdateSpreadSheet(ISocketMessageChannel channel, Optional<SocketUserMessage> message)
-        {
-            String range = "Nodewar signup!D3:H6";
-            SpreadsheetsResource.ValuesResource.GetRequest request =
-                    _service.Spreadsheets.Values.Get(_spreadsheetId, range);
-
-            // Prints the names and majors of students in a sample spreadsheet:
-            // https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/edit
-            ValueRange response = request.Execute();
-            IList<IList<Object>> values = response.Values;
-            if (values != null && values.Count > 0)
-            {
-                Console.WriteLine("Status, Sunday, Monday, Wednesday, Friday");
-                foreach (var row in values)
-                {
-                    // Print columns A and E, which correspond to indices 0 and 4.
-                    Console.WriteLine("{0}, {1}, {2}, {3}, {4}", row[0], row[1], row[2], row[3], row[4]);
-                }
-            }
-            else
-            {
-                Console.WriteLine("No data found.");
-            }
+            _columnHeadersRow = columnHeadersRow;
+            _columnHeaders = GetRowValues(columnHeadersRow);
+            _familyNames = GetColumnValues(familyNamesColumn);
         }
 
         //TODO: How do I make this async
+        internal string ResetAll()
+        {
+            ResetSignups();
+            ResetActivity();
+            return "Reset nodewar signups and activity. Use !nodewarsignup in the announcement channel to create a new signup interface for next week.";
+        }
+
         internal string ResetSignups()
         {
-            var rowValues = GetRowValues(3);
-            if (rowValues == null) return "No columnheaders were found";
+            string[] headersOfColumnsToReset = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Signup Comments" };
+            clearColumnsBasedOnHeaders(_columnHeaders, headersOfColumnsToReset);
 
-            var weekDay = new Weekday(DayEnum.Sunday);
-            do
+            return "Reset nodewar signups. Use !nodewarsignup in the announcement channel to create a new signup interface for next week.";
+        }
+
+        internal string ResetActivity()
+        {
+            string[] headersOfColumnsToReset = { "GQ", "NW", "Villa", "Militia", "Seamonsters"};
+            clearColumnsBasedOnHeaders(_columnHeaders, headersOfColumnsToReset);
+
+            return "Reset activity signups.";
+        }
+
+        private void clearColumnsBasedOnHeaders(IList<IList<object>> rowValues, string[] headerOfColumnsToReset)
+        {
+            foreach (var i in headerOfColumnsToReset)
             {
-                var column = GetColumnOfValue(rowValues, weekDay.ToString());
+                var column = GetColumnOfValue(rowValues, i);
                 if (column != null)
                 {
                     ClearRange("Guild database!" + column + "4:" + column);
                 }
-                weekDay.NextDay();
-            } while (weekDay.Day != DayEnum.Sunday);
-
-            var commentColumn = GetColumnOfValue(rowValues, "Comment");
-            if (commentColumn == null) return "Successfully reset the days but could not reset the comment column";
-            ClearRange("Guild database!" + commentColumn + "4:" + commentColumn);
-            return "Succesfully reset nodewar signups. Use !nodewarsignup in the announcement channel to create a new signup interface for next week.";
+            }
         }
 
         //TODO: How do I make this proper async
         internal async void Signup(string familyName, string value, string signupMessage)
         {
-            var familyNameValues = GetColumnValues("A");
-            if (familyNameValues == null) return;
-
-            var columnHeaders = GetRowValues(3);
-            if (columnHeaders == null) return;
-
-            var updateValue = new List<object>() { value };
-            ValueRange requestBody = new ValueRange { Values = new List<IList<object>> { updateValue } };
-
-            var row = GetRowOfValue(familyName, familyNameValues);
+            var row = GetRowOfValue(familyName, _familyNames);
             if (row == 0) return;
 
             string columnHeader = null;
@@ -130,53 +116,51 @@ namespace EithonBot
             } while (weekDay.Day != DayEnum.Sunday);
             if (columnHeader == null) return;
 
-            var column = GetColumnOfValue(columnHeaders, columnHeader);
+            var column = GetColumnOfValue(_columnHeaders, columnHeader);
             if (column == null) return;
-            UpdateRange(requestBody, "Guild database!" + column + row);
+            
+            SpreadsheetHandler.UpdateCell(_service, _spreadsheetId ,value, "Guild database!" + column + row);
         }
 
         internal string updateStat(string familyName, string stat, string value)
         {
-            var familyNameValues = GetColumnValues("A");
-            if (familyNameValues == null) return "";
-
-            var columnHeaders = GetRowValues(3);
-            if (columnHeaders == null) return "";
-
-            var updateValue = new List<object>() { value };
-            ValueRange requestBody = new ValueRange { Values = new List<IList<object>> { updateValue } };
-
-            var row = GetRowOfValue(familyName, familyNameValues);
-            if (row == 0) return "";
+            var row = GetRowOfValue(familyName, _familyNames);
+            if (row == 0) return "Could not find family name";
 
             string columnHeader = stat;
 
-            var column = GetColumnOfValue(columnHeaders, columnHeader);
-            if (column == null) return "";
-            UpdateRange(requestBody, "Guild database!" + column + row);
-            return "";
+            var statColumn = GetColumnOfValue(_columnHeaders, columnHeader);
+            if (statColumn == null) return "Could not find the stat \"" + stat + "\"";
+            SpreadsheetHandler.UpdateCell(_service, _spreadsheetId, value, "Guild database!" + statColumn + row);
+
+            var dateTime = DateTime.Now;
+            var lastUpdatedColumn = GetColumnOfValue(_columnHeaders, "Gear last updated");
+            if (statColumn == null) return "Could not find the column \"Gear last updated\"";
+            SpreadsheetHandler.UpdateCell(_service, _spreadsheetId, dateTime.ToString(), "Guild database!" + lastUpdatedColumn + row);
+
+            return "Updated " + stat + ".";
         }
 
-        private void UpdateRange(ValueRange requestBody, string range)
+        internal string GetGear(string familyName)
         {
-            var updateRequest = _service.Spreadsheets.Values.Update(
-                            body: requestBody,
-                            spreadsheetId: _spreadsheetId,
-                            range: range
-                            );
-            updateRequest.ValueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.RAW;
-            var result = updateRequest.Execute();
+            var row = GetRowOfValue(familyName, _familyNames);
+            if (row == 0) return "Could not find family name";
+
+            var gearStartColumn = GetColumnOfValue(_columnHeaders, "LVL");
+            if (gearStartColumn == null) return "Error: Could not find the column \"LVL\"";
+            var gearEndColumn = GetColumnOfValue(_columnHeaders, "Gear last updated");
+            if (gearEndColumn == null) return "Could not find the column \"Gear last updated\"";
+
+            var gearHeaders = SpreadsheetHandler.getValuesFromRange(_service, _spreadsheetId, "Guild database!" + gearStartColumn + _columnHeadersRow + ":" + gearEndColumn + _columnHeadersRow);
+            var gearValues = SpreadsheetHandler.getValuesFromRange(_service, _spreadsheetId, "Guild database!" + gearStartColumn + row + ":" + gearEndColumn + row);
+
+            var gearMessage = MessageHelper.createGearMessage(gearHeaders, gearValues);
+            return gearMessage;
         }
 
         private void ClearRange(string range)
         {
-            Data.ClearValuesRequest requestBody = new Data.ClearValuesRequest();
-            var clearRequest = _service.Spreadsheets.Values.Clear(
-                            body: requestBody,
-                            spreadsheetId: _spreadsheetId,
-                            range: range
-                            );
-            var result = clearRequest.Execute();
+            SpreadsheetHandler.ClearRange(_service, _spreadsheetId, range);
         }
 
         private static int GetRowOfValue(string value, IList<IList<object>> columnValues)
@@ -221,28 +205,24 @@ namespace EithonBot
 
         private IList<IList<object>> GetColumnValues(string column)
         {
-            var request = _service.Spreadsheets.Values.Get(_spreadsheetId, "Guild Database!" + column + ":" + column);
-            var response = request.Execute();
-            var columnValues = response.Values;
-            if (columnValues.Count == 0)
+            var values = SpreadsheetHandler.getValuesFromRange(_service, _spreadsheetId, "Guild Database!" + column + ":" + column);
+            if (values.Count == 0)
             {
                 Console.WriteLine("No data in range found");
                 return null;
             }
-            return columnValues;
+            return values;
         }
 
         private IList<IList<object>> GetRowValues(int row)
         {
-            var request = _service.Spreadsheets.Values.Get(_spreadsheetId, "Guild Database!" + row + ":" + row);
-            var response = request.Execute();
-            var rowValues = response.Values;
-            if (rowValues.Count == 0)
+            var values = SpreadsheetHandler.getValuesFromRange(_service, _spreadsheetId, "Guild Database!" + row + ":" + row);
+            if (values.Count == 0)
             {
                 Console.WriteLine("No data in range found");
                 return null;
             }
-            return rowValues;
+            return values;
         }
     }
 }

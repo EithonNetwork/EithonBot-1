@@ -29,5 +29,14 @@ namespace EithonBot
                 await msg.AddReactionAsync(emote);
             }
         }
+
+        public static string createGearMessage(IList<IList<object>> gearHeaders, IList<IList<object>> gearValues)
+        {
+            var gearMessage = "```" + gearHeaders[0][0] + ": " + gearValues[0][0] + ", " + gearHeaders[0][1] + ": " + gearValues[0][1] + ", " + gearHeaders[0][2] + ": " + gearValues[0][2] + ", " + gearHeaders[0][3] + ": " + gearValues[0][3] + "\n" +
+                 gearHeaders[0][4] + ": " + gearValues[0][4] + ", " + gearHeaders[0][5] + ": " + gearValues[0][5] + "\n" +
+                 gearHeaders[0][6] + ": " + gearValues[0][6] + "\n\n" +
+                 gearHeaders[0][7] + ": " + gearValues[0][7] + "```";
+            return gearMessage;
+        }
     }
 }
