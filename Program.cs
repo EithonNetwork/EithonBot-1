@@ -43,7 +43,7 @@ namespace EithonBot
             _commands = new CommandService(new CommandServiceConfig
             {
                 LogLevel = LogSeverity.Info,
-
+                
                 CaseSensitiveCommands = false,
             });
 
@@ -66,8 +66,7 @@ namespace EithonBot
             // you haven't made any mistakes in your dependency graph.
             return map.BuildServiceProvider();
         }*/
-
-
+        
         public async Task MainAsync()
         {
             // Centralize the logic for commands into a separate method.
@@ -77,9 +76,6 @@ namespace EithonBot
             // Login and connect.
             await _client.LoginAsync(TokenType.Bot, ConfigurationManager.AppSettings.Get("BotToken"));
             await _client.StartAsync();
-
-            // Wait infinitely so your bot actually stays connected.
-            await Task.Delay(Timeout.Infinite);
 
             _client.ReactionAdded += ReactionAdded;
 
@@ -100,72 +96,6 @@ namespace EithonBot
             else if (reaction.Emote.Name == "❌") { _spreadsheetLogic.Signup(familyName, "No", message.Content); }
             else if (reaction.Emote.Name == "❔") { _spreadsheetLogic.Signup(familyName, "Maybe", message.Content); }
         }
-
-
-        /*private async Task MessageReceived(SocketMessage message)
-        {
-            var channel = message.Channel;
-            var guild = (channel as SocketGuildChannel)?.Guild;
-            var user = guild.GetUser(message.Author.Id);
-
-            if (message.Content == "!nodewarsignup")
-            {
-                var greenCheckEmoji = new Emoji("✅");
-                var xEmoji = new Emoji("❌");
-                var greyQuestionEmoji = new Emoji("❔");
-
-                await message.DeleteAsync();
-
-                var infoMessage = await channel.SendMessageAsync("**Please react to the following messages to indicate your participation in the coming guild activities:**");
-
-                var eventMessage = await MessageHelper.SendMessageWithReactionsAsync(message, "Event. Sunday event", false, null, greenCheckEmoji, xEmoji, greyQuestionEmoji);
-                var mondayMessage = await MessageHelper.SendMessageWithReactionsAsync(message, "1. Monday nodewar", false, null, greenCheckEmoji, xEmoji, greyQuestionEmoji);
-                var wednesdayMessage = await MessageHelper.SendMessageWithReactionsAsync(message, "2. Wednesday nodewar", false, null, greenCheckEmoji, xEmoji, greyQuestionEmoji);
-                var fridayMessage = await MessageHelper.SendMessageWithReactionsAsync(message, "3. Friday nodewar", false, null, greenCheckEmoji, xEmoji, greyQuestionEmoji);
-            }
-
-            if (message.Content == "!reset all")
-            {
-                var response = _spreadsheetLogic.ResetAll();
-                await channel.SendMessageAsync(response);
-            }
-
-            if (message.Content == "!reset signups")
-            {
-                var response = _spreadsheetLogic.ResetSignups();
-                await channel.SendMessageAsync(response);
-            }
-
-            if (message.Content == "!reset activity")
-            {
-                var response = _spreadsheetLogic.ResetActivity();
-                await channel.SendMessageAsync(response);
-            }
-
-            if (message.Content.IndexOf("!gear") > -1)
-            {
-                var familyName = user.Nickname.Substring(0, user.Nickname.IndexOf(" "));
-                var words = message.Content.Split(" ");
-                var wordsList = words.ToList();
-
-                if(words.Length < 2)
-                {
-                    var gearMessage = _spreadsheetLogic.GetGear(familyName);
-                    await channel.SendMessageAsync(gearMessage);
-                    return;
-                }
-                else {
-                    //Todo: Make this less ugly
-                    wordsList.RemoveAt(0);
-                    var stat = wordsList[0];
-                    wordsList.RemoveAt(0);
-                    var param = String.Join(" ", wordsList);
-                    var response = _spreadsheetLogic.updateStat(familyName, stat, param);
-                    var gearMessage = response + " Your gear info is now as follows:\n" + _spreadsheetLogic.GetGear(familyName);
-                    await channel.SendMessageAsync(gearMessage);
-                }
-            }
-        }*/
 
         private Task Log(LogMessage msg)
         {

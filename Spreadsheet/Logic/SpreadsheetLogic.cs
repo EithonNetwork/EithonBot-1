@@ -28,6 +28,8 @@ namespace EithonBot
         private string _sheetName;
         private int _columnHeadersRow;
         private IList<IList<object>> _columnHeaders;
+        private string _familyNamesColumn;
+        //TODO: Update this after added/removed member so system works if you were added after the bot was started
         private IList<IList<object>> _familyNames;
         private SheetsService _service;
 
@@ -62,15 +64,41 @@ namespace EithonBot
 
             _columnHeadersRow = columnHeadersRow;
             _columnHeaders = GetRowValues(columnHeadersRow);
+            _familyNamesColumn = familyNamesColumn;
             _familyNames = GetColumnValues(familyNamesColumn);
         }
 
-        //TODO: How do I make this async
-        internal string ResetAll()
+        //TODO: Make a proper system for this
+        internal bool MemberExists(string familyName)
         {
-            ResetSignups();
-            ResetActivity();
-            return "Reset nodewar signups and activity. Use !nodewarsignup in the announcement channel to create a new signup interface for next week.";
+            var row = GetRowOfValue(familyName, _familyNames);
+            if (row == 0) return false;
+            return true;
+        }
+
+        internal void AddMember(string familyName, string characterName)
+        {
+            IList<Object> obj = new List<Object>();
+            obj.Add(familyName);
+            obj.Add(characterName);
+            IList<IList<Object>> values = new List<IList<Object>>();
+            values.Add(obj);
+
+            SpreadsheetsResource.ValuesResource.AppendRequest request =
+                    _service.Spreadsheets.Values.Append(new ValueRange() { Values = values }, _spreadsheetId, "Guild database!A4:Y4");
+            request.InsertDataOption = SpreadsheetsResource.ValuesResource.AppendRequest.InsertDataOptionEnum.INSERTROWS;
+            request.ValueInputOption = SpreadsheetsResource.ValuesResource.AppendRequest.ValueInputOptionEnum.RAW;
+            var response = request.Execute();
+            _familyNames = GetColumnValues(_familyNamesColumn);
+        }
+
+        internal void RemoveMember(string familyName)
+        {
+            var row = GetRowOfValue(familyName, _familyNames);
+            if (row == 0) return;
+
+            SpreadsheetHandler.DeleteRow(_service, _spreadsheetId, row);
+            _familyNames = GetColumnValues(_familyNamesColumn);
         }
 
         internal string ResetSignups()
@@ -83,7 +111,7 @@ namespace EithonBot
 
         internal string ResetActivity()
         {
-            string[] headersOfColumnsToReset = { "GQ", "NW", "Villa", "Militia", "Seamonsters"};
+            string[] headersOfColumnsToReset = { "GQ", "NW", "VILLA", "MILITIA", "SEAMONSTERS"};
             clearColumnsBasedOnHeaders(_columnHeaders, headersOfColumnsToReset);
 
             return "Reset activity signups.";
@@ -158,7 +186,50 @@ namespace EithonBot
             return gearMessage;
         }
 
+        internal string addActivity(string familyName, string activity)
+        {
+            var row = GetRowOfValue(familyName, _familyNames);
+            if (row == 0) return "Could not find family name";
+
+            string columnHeader = activity;
+
+            var statColumn = GetColumnOfValue(_columnHeaders, columnHeader);
+            if (statColumn == null) return "Could not find the stat \"" + activity + "\"";
+            var cellOldValue = Convert.ToInt32(SpreadsheetHandler.getValuesFromRange(_service, _spreadsheetId, "Guild database!" + statColumn + row)[0][0]);
+            var cellNewValue = cellOldValue + 1;
+            SpreadsheetHandler.UpdateCell(_service, _spreadsheetId, cellNewValue.ToString(), "Guild database!" + statColumn + row);
+
+            var dateTime = DateTime.Now;
+            var lastUpdatedColumn = GetColumnOfValue(_columnHeaders, "Activity last updated");
+            if (statColumn == null) return "Could not find the column \"Activity last updated\"";
+            SpreadsheetHandler.UpdateCell(_service, _spreadsheetId, dateTime.ToString(), "Guild database!" + lastUpdatedColumn + row);
+
+            return "Updated " + activity + ".";
+        }
+
+        internal string GetActivity(string familyName)
+        {
+            var row = GetRowOfValue(familyName, _familyNames);
+            if (row == 0) return "Could not find family name";
+
+            var activityStartColumn = GetColumnOfValue(_columnHeaders, "GQ");
+            if (activityStartColumn == null) return "Error: Could not find the column \"GQ\"";
+            var activityEndColumn = GetColumnOfValue(_columnHeaders, "Activity last updated");
+            if (activityEndColumn == null) return "Could not find the column \"Activity last updated\"";
+
+            var activityHeaders = SpreadsheetHandler.getValuesFromRange(_service, _spreadsheetId, "Guild database!" + activityStartColumn + _columnHeadersRow + ":" + activityEndColumn + _columnHeadersRow);
+            var activityValues = SpreadsheetHandler.getValuesFromRange(_service, _spreadsheetId, "Guild database!" + activityStartColumn + row + ":" + activityEndColumn + row);
+
+            var activityMessage = MessageHelper.createActivityMessage(activityHeaders, activityValues);
+            return activityMessage;
+        }
+
         private void ClearRange(string range)
+        {
+            SpreadsheetHandler.ClearRange(_service, _spreadsheetId, range);
+        }
+
+        private void DeleteRange(string range)
         {
             SpreadsheetHandler.ClearRange(_service, _spreadsheetId, range);
         }

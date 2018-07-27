@@ -15,7 +15,7 @@ namespace EithonBot.Spreadsheet.Handler
             var values = response.Values;
             return values;
         }
-        
+
         internal static void ClearRange(SheetsService service, string spreadsheetId, string range)
         {
             ClearValuesRequest requestBody = new ClearValuesRequest();
@@ -25,6 +25,32 @@ namespace EithonBot.Spreadsheet.Handler
                             range: range
                             );
             clearRequest.Execute();
+        }
+
+        internal static void DeleteRow(SheetsService service, string spreadsheetId, int row)
+        {
+            Request RequestBody = new Request()
+            {
+                DeleteDimension = new DeleteDimensionRequest()
+                {
+                    Range = new DimensionRange()
+                    {
+                        SheetId = 593128798,
+                        Dimension = "ROWS",
+                        StartIndex = row-1,
+                        EndIndex = row
+                    }
+                }
+            };
+
+            List<Request> RequestContainer = new List<Request>();
+            RequestContainer.Add(RequestBody);
+
+            BatchUpdateSpreadsheetRequest DeleteRequest = new BatchUpdateSpreadsheetRequest();
+            DeleteRequest.Requests = RequestContainer;
+
+            SpreadsheetsResource.BatchUpdateRequest Deletion = new SpreadsheetsResource.BatchUpdateRequest(service, DeleteRequest, spreadsheetId);
+            Deletion.Execute();
         }
 
 

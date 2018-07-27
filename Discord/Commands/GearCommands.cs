@@ -1,6 +1,7 @@
 ﻿using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
+using EithonBot.Discord.Helpers;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -11,26 +12,12 @@ namespace EithonBot.Discord.Commands
     [Group("gear")]
     public class GearModule : SpreadsheetModuleBase
     {
-        public string GetFamilyName(SocketUser user)
-        {
-            var guildUser = (SocketGuildUser)user;
-            try
-            {
-                return guildUser.Nickname.Substring(0, guildUser.Nickname.IndexOf(" "));
-            }
-            //TODO: Properly handle the exception
-            catch
-            {
-                Context.Channel.SendMessageAsync("Could not parse family name of command user. Please make sure that the nickname of the user is in the correct format: **<FamilyName> (CharacterName)**");
-                throw new ApplicationException();
-            }
-        }
 
         [Command]
         [Summary("Retrieves your own gear")]
         public async Task GetOwnGear()
         {
-            var familyName = GetFamilyName(Context.User);
+            var familyName = MiscHelper.GetFamilyName(Context, Context.User);
             var gearMessage = _spreadsheetLogic.GetGear(familyName);
             await Context.Channel.SendMessageAsync(gearMessage);
         }
@@ -39,7 +26,7 @@ namespace EithonBot.Discord.Commands
         [Summary("Retrieves other user's gear")]
         public async Task GetGearOfUser([Summary("The user")]IUser user)
         {
-            var familyName = GetFamilyName((SocketUser)user);
+            var familyName = MiscHelper.GetFamilyName(Context, user);
             var gearMessage = _spreadsheetLogic.GetGear(familyName);
             await Context.Channel.SendMessageAsync(gearMessage);
         }
@@ -48,7 +35,7 @@ namespace EithonBot.Discord.Commands
         [Summary("Sets your level")]
         public async Task UpdateLvlAsync([Summary("The user's level")] int value)
         {
-            var familyName = GetFamilyName(Context.User);
+            var familyName = MiscHelper.GetFamilyName(Context, Context.User);
             var response = _spreadsheetLogic.updateStat(familyName, "LVL", value.ToString());
             var gearMessage = response + " Your gear info is now as follows:\n" + _spreadsheetLogic.GetGear(familyName);
             await Context.Channel.SendMessageAsync(gearMessage);
@@ -58,7 +45,7 @@ namespace EithonBot.Discord.Commands
         [Summary("Sets your AP")]
         public async Task UpdateApAsync([Summary("The user's AP")] int value)
         {
-            var familyName = GetFamilyName(Context.User);
+            var familyName = MiscHelper.GetFamilyName(Context, Context.User);
             var response = _spreadsheetLogic.updateStat(familyName, "AP", value.ToString());
             var gearMessage = response + " Your gear info is now as follows:\n" + _spreadsheetLogic.GetGear(familyName);
             await Context.Channel.SendMessageAsync(gearMessage);
@@ -68,7 +55,7 @@ namespace EithonBot.Discord.Commands
         [Summary("Sets your Awakening AP")]
         public async Task UpdateAapAsync([Summary("The user's Awakening AP")] int value)
         {
-            var familyName = GetFamilyName(Context.User);
+            var familyName = MiscHelper.GetFamilyName(Context, Context.User);
             var response = _spreadsheetLogic.updateStat(familyName, "AAP", value.ToString());
             var gearMessage = response + " Your gear info is now as follows:\n" + _spreadsheetLogic.GetGear(familyName);
             await Context.Channel.SendMessageAsync(gearMessage);
@@ -78,7 +65,7 @@ namespace EithonBot.Discord.Commands
         [Summary("Sets your DP")]
         public async Task UpdateDpAsync([Summary("The user's DP")] int value)
         {
-            var familyName = GetFamilyName(Context.User);
+            var familyName = MiscHelper.GetFamilyName(Context, Context.User);
             var response = _spreadsheetLogic.updateStat(familyName, "DP", value.ToString());
             var gearMessage = response + " Your gear info is now as follows:\n" + _spreadsheetLogic.GetGear(familyName);
             await Context.Channel.SendMessageAsync(gearMessage);
@@ -88,7 +75,7 @@ namespace EithonBot.Discord.Commands
         [Summary("Sets your Alchemy stone")]
         public async Task UpdateAlchStoneAsync([Summary("The user's Alchemy stone")] int value)
         {
-            var familyName = GetFamilyName(Context.User);
+            var familyName = MiscHelper.GetFamilyName(Context, Context.User);
             var response = _spreadsheetLogic.updateStat(familyName, "AlchStone", value.ToString());
             var gearMessage = response + " Your gear info is now as follows:\n" + _spreadsheetLogic.GetGear(familyName);
             await Context.Channel.SendMessageAsync(gearMessage);
@@ -98,7 +85,7 @@ namespace EithonBot.Discord.Commands
         [Summary("Sets your Alchemy stone")]
         public async Task UpdateAxeAsync([Summary("The user's axe")] string value)
         {
-            var familyName = GetFamilyName(Context.User);
+            var familyName = MiscHelper.GetFamilyName(Context, Context.User);
             var response = _spreadsheetLogic.updateStat(familyName, "Axe", value);
             var gearMessage = response + " Your gear info is now as follows:\n" + _spreadsheetLogic.GetGear(familyName);
             await Context.Channel.SendMessageAsync(gearMessage);
@@ -109,7 +96,7 @@ namespace EithonBot.Discord.Commands
         public async Task UpdateGearCommentAsync([Remainder] [Summary("The user's gear comment")] string value)
         {
             //TODO: Only allow actual alchemy stones
-            var familyName = GetFamilyName(Context.User);
+            var familyName = MiscHelper.GetFamilyName(Context, Context.User);
             var response = _spreadsheetLogic.updateStat(familyName, "GearComment", value);
             var gearMessage = response + " Your gear info is now as follows:\n" + _spreadsheetLogic.GetGear(familyName);
             await Context.Channel.SendMessageAsync(gearMessage);

@@ -30,6 +30,7 @@ namespace EithonBot
             }
         }
 
+        //TODO: Do something about these messages
         public static string createGearMessage(IList<IList<object>> gearHeaders, IList<IList<object>> gearValues)
         {
             var gearMessage = "```" + gearHeaders[0][0] + ": " + gearValues[0][0] + ", " + gearHeaders[0][1] + ": " + gearValues[0][1] + ", " + gearHeaders[0][2] + ": " + gearValues[0][2] + ", " + gearHeaders[0][3] + ": " + gearValues[0][3] + "\n" +
@@ -37,6 +38,13 @@ namespace EithonBot
                  gearHeaders[0][6] + ": " + gearValues[0][6] + "\n\n" +
                  gearHeaders[0][7] + ": " + gearValues[0][7] + "```";
             return gearMessage;
+        }
+
+        public static string createActivityMessage(IList<IList<object>> activityHeaders, IList<IList<object>> activityValues)
+        {
+            var activityMessage = "```" + activityHeaders[0][0] + ": " + activityValues[0][0] + ", " + activityHeaders[0][1] + ": " + activityValues[0][1] + ", " + activityHeaders[0][2] + ": " + activityValues[0][2] + ", " + activityHeaders[0][3] + ": " + activityValues[0][3] + ", " + activityHeaders[0][4] + ": " + activityValues[0][4] + "\n\n" +
+                 activityHeaders[0][5] + ": " + activityValues[0][5] + "```";
+            return activityMessage;
         }
     }
 }
