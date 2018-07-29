@@ -85,10 +85,13 @@ namespace EithonBot
         [Command("say")]
         [Summary("Echoes a message.")]
         public Task SayAsync([Remainder] [Summary("The text to echo")] string echo)
-            => ReplyAsync(echo, false, EmbedHelper.GearEmbed());
-        //await Context.Channel.SendMessageAsync("", false, builder);
+            => ReplyAsync(echo);
 
-        // ReplyAsync is a method on ModuleBase
+        // ~say hello world -> hello world
+        [Command("invitelink")]
+        [Summary("Provides the invite link.")]
+        public Task GetLink()
+            => ReplyAsync("https://discordapp.com/oauth2/authorize?client_id=460865617424154624&scope=bot");
     }
 
     public class SignupModule : SpreadsheetModuleBase

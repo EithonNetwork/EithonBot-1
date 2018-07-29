@@ -15,6 +15,8 @@ using System.Linq;
 using static EithonBot.Models.Weekday;
 using EithonBot.Models;
 using EithonBot.Spreadsheet.Handler;
+//TODO: Where do I rename this to .Helpers
+using EithonBot.Spreadsheet.NewFolder;
 
 namespace EithonBot
 {
@@ -150,78 +152,160 @@ namespace EithonBot
             SpreadsheetHandler.UpdateCell(_service, _spreadsheetId ,value, "Guild database!" + column + row);
         }
 
-        internal string updateStat(string familyName, string stat, string value)
+        internal string updateGearStat(string familyName, string stat, string value)
         {
-            var row = GetRowOfValue(familyName, _familyNames);
-            if (row == 0) return "Could not find family name";
-
             string columnHeader = stat;
 
-            var statColumn = GetColumnOfValue(_columnHeaders, columnHeader);
-            if (statColumn == null) return "Could not find the stat \"" + stat + "\"";
-            SpreadsheetHandler.UpdateCell(_service, _spreadsheetId, value, "Guild database!" + statColumn + row);
+            var message = updateField(familyName, stat, value);
 
             var dateTime = DateTime.Now;
-            var lastUpdatedColumn = GetColumnOfValue(_columnHeaders, "Gear last updated");
-            if (statColumn == null) return "Could not find the column \"Gear last updated\"";
-            SpreadsheetHandler.UpdateCell(_service, _spreadsheetId, dateTime.ToString(), "Guild database!" + lastUpdatedColumn + row);
+            updateField(familyName, "Gear last updated", dateTime.ToString());
 
-            return "Updated " + stat + ".";
+            return message;
         }
 
-        internal string GetGear(string familyName)
+        internal string updateField(string familyName, string header, string value)
         {
             var row = GetRowOfValue(familyName, _familyNames);
             if (row == 0) return "Could not find family name";
 
-            var gearStartColumn = GetColumnOfValue(_columnHeaders, "LVL");
-            if (gearStartColumn == null) return "Error: Could not find the column \"LVL\"";
-            var gearEndColumn = GetColumnOfValue(_columnHeaders, "Gear last updated");
-            if (gearEndColumn == null) return "Could not find the column \"Gear last updated\"";
+            var headerColumn = GetColumnOfValue(_columnHeaders, header);
+            if (headerColumn == null) return "Could not find the header \"" + header + "\"";
+            SpreadsheetHandler.UpdateCell(_service, _spreadsheetId, value, "Guild database!" + headerColumn + row);
 
-            var gearHeaders = SpreadsheetHandler.getValuesFromRange(_service, _spreadsheetId, "Guild database!" + gearStartColumn + _columnHeadersRow + ":" + gearEndColumn + _columnHeadersRow);
-            var gearValues = SpreadsheetHandler.getValuesFromRange(_service, _spreadsheetId, "Guild database!" + gearStartColumn + row + ":" + gearEndColumn + row);
-
-            var gearMessage = MessageHelper.createGearMessage(gearHeaders, gearValues);
-            return gearMessage;
+            return "Updated " + header + ".";
         }
 
-        internal string addActivity(string familyName, string activity)
+        internal MemberGear GetGear(string familyName)
+        {
+            var gearValues = new Dictionary<string, string>();
+
+            var row = GetRowOfValue(familyName, _familyNames);
+            //if (row == 0) return "Could not find family name";
+
+            var columnHeaders = DatabaseHelper.GetGearHeaders();
+
+            var startColumn = GetColumnOfValue(_columnHeaders, columnHeaders.FirstOrDefault());
+            var endColumn = GetColumnOfValue(_columnHeaders, columnHeaders.LastOrDefault());
+            var values = SpreadsheetHandler.getValuesFromRange(_service, _spreadsheetId, "Guild database!" + startColumn + row + ":" + endColumn + row);
+            if (values == null) return null;
+
+            for (var i = 0; i < columnHeaders.Count();i++)
+            {
+                var value = values[0][i];
+                if ((string)value == "") value = "N/A";
+                gearValues.TryAdd(columnHeaders[i], value.ToString());
+            }
+
+            //TODO: Better way of doing this (So I don't have to update gear headers in multiple places
+            var memberGear = new MemberGear();
+            memberGear.LVL = gearValues.GetValueOrDefault("LVL");
+            memberGear.Renown = gearValues.GetValueOrDefault("Renown");
+
+            memberGear.AP = gearValues.GetValueOrDefault("AP");
+            memberGear.AAP = gearValues.GetValueOrDefault("AAP");
+            memberGear.DP = gearValues.GetValueOrDefault("DP");
+
+            //memberGear.Class = gearValues.GetValueOrDefault("Class");
+            memberGear.AlchStone = gearValues.GetValueOrDefault("AlchStone");
+            memberGear.Axe = gearValues.GetValueOrDefault("Axe");
+
+            memberGear.GearComment = gearValues.GetValueOrDefault("GearComment");
+            memberGear.GearLink = gearValues.GetValueOrDefault("GearLink");
+            memberGear.GearLastUpdated = gearValues.GetValueOrDefault("Gear last updated");
+            return memberGear;
+        }
+
+        internal string AddActivity(string familyName, string activityType)
         {
             var row = GetRowOfValue(familyName, _familyNames);
             if (row == 0) return "Could not find family name";
 
-            string columnHeader = activity;
+            string columnHeader = activityType;
 
             var statColumn = GetColumnOfValue(_columnHeaders, columnHeader);
-            if (statColumn == null) return "Could not find the stat \"" + activity + "\"";
-            var cellOldValue = Convert.ToInt32(SpreadsheetHandler.getValuesFromRange(_service, _spreadsheetId, "Guild database!" + statColumn + row)[0][0]);
-            var cellNewValue = cellOldValue + 1;
-            SpreadsheetHandler.UpdateCell(_service, _spreadsheetId, cellNewValue.ToString(), "Guild database!" + statColumn + row);
+            if (statColumn == null) return "Could not find the stat \"" + activityType + "\"";
+            var cellOldValue = SpreadsheetHandler.getValuesFromRange(_service, _spreadsheetId, "Guild database!" + statColumn + row);
+            int newValue;
+            if (cellOldValue == null) newValue = 1;
+            else newValue = Convert.ToInt32(cellOldValue[0][0]) + 1;
+            var cellNewValue = newValue.ToString();
+
+            SpreadsheetHandler.UpdateCell(_service, _spreadsheetId, cellNewValue, "Guild database!" + statColumn + row);
 
             var dateTime = DateTime.Now;
             var lastUpdatedColumn = GetColumnOfValue(_columnHeaders, "Activity last updated");
             if (statColumn == null) return "Could not find the column \"Activity last updated\"";
             SpreadsheetHandler.UpdateCell(_service, _spreadsheetId, dateTime.ToString(), "Guild database!" + lastUpdatedColumn + row);
 
-            return "Updated " + activity + ".";
+            return "Updated " + activityType + ".";
         }
 
-        internal string GetActivity(string familyName)
+        internal string RemoveActivity(string familyName, string activityType)
         {
             var row = GetRowOfValue(familyName, _familyNames);
             if (row == 0) return "Could not find family name";
 
-            var activityStartColumn = GetColumnOfValue(_columnHeaders, "GQ");
-            if (activityStartColumn == null) return "Error: Could not find the column \"GQ\"";
-            var activityEndColumn = GetColumnOfValue(_columnHeaders, "Activity last updated");
-            if (activityEndColumn == null) return "Could not find the column \"Activity last updated\"";
+            string columnHeader = activityType;
 
-            var activityHeaders = SpreadsheetHandler.getValuesFromRange(_service, _spreadsheetId, "Guild database!" + activityStartColumn + _columnHeadersRow + ":" + activityEndColumn + _columnHeadersRow);
-            var activityValues = SpreadsheetHandler.getValuesFromRange(_service, _spreadsheetId, "Guild database!" + activityStartColumn + row + ":" + activityEndColumn + row);
+            var statColumn = GetColumnOfValue(_columnHeaders, columnHeader);
+            if (statColumn == null) return "Could not find the stat \"" + activityType + "\"";
 
-            var activityMessage = MessageHelper.createActivityMessage(activityHeaders, activityValues);
-            return activityMessage;
+            var cellOldValue = SpreadsheetHandler.getValuesFromRange(_service, _spreadsheetId, "Guild database!" + statColumn + row);
+            int newValue;
+            if (cellOldValue == null) return null;
+            else newValue = Convert.ToInt32(cellOldValue[0][0]) - 1;
+
+            //If 0 put blank
+            string cellNewValue;
+            if (newValue == 0) cellNewValue = "";
+            else cellNewValue = newValue.ToString();
+
+            SpreadsheetHandler.UpdateCell(_service, _spreadsheetId, cellNewValue, "Guild database!" + statColumn + row);
+
+            var dateTime = DateTime.Now;
+            var lastUpdatedColumn = GetColumnOfValue(_columnHeaders, "Activity last updated");
+            if (statColumn == null) return "Could not find the column \"Activity last updated\"";
+            SpreadsheetHandler.UpdateCell(_service, _spreadsheetId, dateTime.ToString(), "Guild database!" + lastUpdatedColumn + row);
+
+            return "Updated " + activityType + ".";
+        }
+
+        internal MemberActivity GetActivity(string familyName)
+        {
+            var activityValues = new Dictionary<string, string>();
+
+            var row = GetRowOfValue(familyName, _familyNames);
+            //if (row == 0) return "Could not find family name";
+
+            var columnHeaders = DatabaseHelper.GetActivityHeaders();
+
+            var startColumn = GetColumnOfValue(_columnHeaders, columnHeaders.FirstOrDefault());
+            var endColumn = GetColumnOfValue(_columnHeaders, columnHeaders.LastOrDefault());
+            var values = SpreadsheetHandler.getValuesFromRange(_service, _spreadsheetId, "Guild database!" + startColumn + row + ":" + endColumn + row);
+            if (values == null) return null;
+
+            for (var i = 0; i < columnHeaders.Count(); i++)
+            {
+                var value = values[0][i];
+                if ((string)value == "") value = "N/A";
+                activityValues.TryAdd(columnHeaders[i], value.ToString());
+            }
+
+            //TODO: Better way of doing this (So I don't have to update gear headers in multiple places
+            var memberActivity = new MemberActivity();
+            memberActivity.Tier = activityValues.GetValueOrDefault("Tier");
+            memberActivity.GA = activityValues.GetValueOrDefault("GA");
+
+            memberActivity.GQ = activityValues.GetValueOrDefault("GQ");
+            memberActivity.NW = activityValues.GetValueOrDefault("NW");
+            memberActivity.Villa = activityValues.GetValueOrDefault("Villa");
+            memberActivity.Militia = activityValues.GetValueOrDefault("Militia");
+            memberActivity.Seamonsters = activityValues.GetValueOrDefault("Seamonsters");
+
+            memberActivity.InactivityNotice = activityValues.GetValueOrDefault("InactivityNotice");
+            memberActivity.ActivityLastUpdated = activityValues.GetValueOrDefault("Activity last updated");
+            return memberActivity;
         }
 
         private void ClearRange(string range)

@@ -3,6 +3,7 @@ using Discord.Commands;
 using Discord.WebSocket;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace EithonBot.Discord.Helpers
@@ -35,9 +36,44 @@ namespace EithonBot.Discord.Helpers
             //TODO: Properly handle the exception
             catch
             {
-                context.Channel.SendMessageAsync("Could not parse character name of command user. Please make sure that the nickname of the user is in the correct format: **<FamilyName> (CharacterName)**");
+                context.Channel.SendMessageAsync("Could not parse character name of command user. Please make sure that the nickname of the user is in the correct format: **<FamilyName> (<CharacterName>)**");
                 throw new ApplicationException();
             }
+        }
+
+        public static string GetClassRoleOfUser(IUser user)
+        {
+            var guildUser = (SocketGuildUser)user;
+
+            var classRoles = GetClassRolesOfGuild();
+            foreach (var role in classRoles)
+            {
+                if (guildUser.Roles.Any(r => r.Name == role)) return role;
+            }
+            return null;
+        }
+
+        public static List<string> GetClassRolesOfGuild()
+        {
+            var classList = new List<string>
+            {
+                "Warrior",
+                "Ranger",
+                "Sorceress",
+                "Berserker",
+                "Tamer",
+                "Valkyrie",
+                "Witch",
+                "Wizard",
+                "Kunoichi",
+                "Ninja",
+                "Maehwa",
+                "Musa",
+                "Dark Knight",
+                "Striker",
+                "Mystic"
+            };
+            return classList;
         }
     }
 }

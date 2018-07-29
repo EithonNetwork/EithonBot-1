@@ -10,9 +10,10 @@ namespace EithonBot.Discord.Helpers
 {
     class PermissionsHelper
     {
-        public static bool UserHasRole(SocketGuildUser user, string roleName)
+        public static bool UserHasRole(IUser user, string roleName)
         {
-            if (user.Roles.Any(r => r.Name == roleName)) return true;
+            var guildUser = (SocketGuildUser)user;
+            if (guildUser.Roles.Any(r => r.Name == roleName)) return true;
             return false;
         }
     }
