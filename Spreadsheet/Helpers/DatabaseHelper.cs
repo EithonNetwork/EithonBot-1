@@ -6,7 +6,17 @@ namespace EithonBot.Spreadsheet.NewFolder
 {
     class DatabaseHelper
     {
-        public static List<string> GetGearHeaders(bool getOnlyCommandEditableHeaders = false)
+        internal static List<string> GetColumnLetters()
+        {
+            var columnLetters = new List<string>
+            {
+                "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", "AA", "AB", "AC", "AD", "AE", "AF", "AG", "AH", "AI", "AJ", "AK", "AL", "AM", "AN", "AO", "AP", "AQ", "AR", "AS", "AT", "AU", "AV", "AW", "AX", "AY", "AZ", "BA", "BB", "BC", "BD", "BE", "BF", "BG", "BH"
+            };
+
+            return columnLetters;
+        }
+
+        internal static List<string> GetGearHeaders(bool getOnlyCommandEditableHeaders = false)
         {
             var gearHeaders = new List<string>
             {
@@ -31,7 +41,7 @@ namespace EithonBot.Spreadsheet.NewFolder
             return gearHeaders;
         }
 
-        public static List<string> GetActivityHeaders(bool getOnlyCommandEditableHeaders = false)
+        internal static List<string> GetActivityHeaders(bool getOnlyCommandEditableHeaders = false)
         {
             var gearHeaders = new List<string>
             {
@@ -56,5 +66,21 @@ namespace EithonBot.Spreadsheet.NewFolder
             return gearHeaders;
         }
 
+        internal static List<string> GetSignupHeaders()
+        {
+            var gearHeaders = new List<string>
+            {
+                "Sunday",
+                "Monday",
+                "Tuesday",
+                "Wednesday",
+                "Thursday",
+                "Friday",
+                "Saturday",
+                "SignupComment"
+            };
+
+            return gearHeaders;
+        }
     }
 }

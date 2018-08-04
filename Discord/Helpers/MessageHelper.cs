@@ -11,9 +11,9 @@ namespace EithonBot
 
     public static class MessageHelper
     {
-        public static async Task<IUserMessage> SendMessageWithReactionsAsync(SocketMessage context, string content, bool isTTS = false, Embed embed = null, params IEmote[] emotes)
+        public static async Task<IUserMessage> SendMessageWithReactionsAsync(ISocketMessageChannel channel, string content, bool isTTS = false, Embed embed = null, params IEmote[] emotes)
         {
-            var msg = await context.Channel.SendMessageAsync(content, isTTS, embed);
+            var msg = await channel.SendMessageAsync(content, isTTS, embed);
             foreach (var emote in emotes)
             {
                 await msg.AddReactionAsync(emote);

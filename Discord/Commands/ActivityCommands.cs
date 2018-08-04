@@ -19,9 +19,9 @@ namespace EithonBot.Discord.Commands
         {
             //TODO: Fix exceptions
             var familyName = MiscHelper.GetFamilyName(Context, Context.User);
-            var memberActivity = _spreadsheetLogic.GetActivity(familyName);
+            var memberActivity = SpreadsheetLogic.GetActivity(familyName);
             if (memberActivity == null) await Context.Channel.SendMessageAsync($"Could not find any activity for {Context.User.Mention}. Officers can add it with the ``!activity add <activity> <@user>`` command");
-            else await Context.Channel.SendMessageAsync("", false, EmbedHelper.UserActivityEmbed(Context.User, memberActivity));
+            else await Context.Channel.SendMessageAsync("", false, EmbedHelper.ActivityProfileEmbed(Context.User, memberActivity));
         }
 
         [Command]
@@ -30,20 +30,64 @@ namespace EithonBot.Discord.Commands
         {
             //TODO: Fix exceptions
             var familyName = MiscHelper.GetFamilyName(Context, user);
-            var memberActivity = _spreadsheetLogic.GetActivity(familyName);
+            var memberActivity = SpreadsheetLogic.GetActivity(familyName);
             if (memberActivity == null) await Context.Channel.SendMessageAsync($"Could not find any activity for {user.Mention}. Officers can add it with the ``!activity add <activity> <@user>`` command");
-            else await Context.Channel.SendMessageAsync("", false, EmbedHelper.UserActivityEmbed(user, memberActivity));
+            else await Context.Channel.SendMessageAsync("", false, EmbedHelper.ActivityProfileEmbed(user, memberActivity));
         }
 
         [Command("InactivityNotice")]
         [Summary("Sets your inactivity notice")]
-        public async Task SetInactivityNotice([Remainder][Summary("Inactivity notice message")] string message)
+        [Priority(1)]
+        public async Task SetInactivityNotice([Remainder][Summary("Inactivity notice message")] string inactivityNotice)
         {
             var familyName = MiscHelper.GetFamilyName(Context, Context.User);
-            var response = _spreadsheetLogic.updateField(familyName, "InactivityNotice", message);
-            var memberActivity = _spreadsheetLogic.GetActivity(familyName);
-            message = response + " Your activity profile is now as follows:";
-            await Context.Channel.SendMessageAsync(message, false, EmbedHelper.UserActivityEmbed(Context.User, memberActivity));
+            var response = SpreadsheetLogic.UpdateField(familyName, "InactivityNotice", inactivityNotice);
+            SpreadsheetLogic.UpdateField(familyName, "Activity last updated", DateTime.Now.ToString());
+            var memberActivity = SpreadsheetLogic.GetActivity(familyName);
+            var message = response + " Your activity profile is now as follows:";
+            await Context.Channel.SendMessageAsync(message, false, EmbedHelper.ActivityProfileEmbed(Context.User, memberActivity));
+        }
+
+        [Command("InactivityNotice remove")]
+        [Summary("Removes your inactivity notice")]
+        [Priority(2)]
+        public async Task RemoveInactivityNotice()
+        {
+            var familyName = MiscHelper.GetFamilyName(Context, Context.User);
+            var response = SpreadsheetLogic.UpdateField(familyName, "InactivityNotice", "");
+            SpreadsheetLogic.UpdateField(familyName, "Activity last updated", DateTime.Now.ToString());
+            var memberActivity = SpreadsheetLogic.GetActivity(familyName);
+            var message = response + " Your activity profile is now as follows:";
+            await Context.Channel.SendMessageAsync(message, false, EmbedHelper.ActivityProfileEmbed(Context.User, memberActivity));
+        }
+
+        [Command("nodewarparty")]
+        [Summary("Adds activity to specified activity for user")]
+        public async Task AddPartyActivityAsync([Remainder][Summary("The Activity type")]string partyName)
+        {
+            //TODO: Fix exceptions
+            if (!PermissionsHelper.UserHasRole(Context.User, "Party Leader")) await Context.Channel.SendMessageAsync("``Party Leader`` role is required to execute this command");
+            else
+            {
+                string message = $"**{partyName} members**";
+                var partyMembers = SpreadsheetLogic.GetPartyMembers(partyName);
+
+                for (var i = 0; i < partyMembers.Count;i++)
+                {
+                    var partyMember = partyMembers[i];
+                    message = $"{message}\n{i+1} {partyMember}";
+                }
+
+                var oneEmoji = new Emoji("1⃣");
+                var twoEmoji = new Emoji("2⃣");
+                var threeEmoji = new Emoji("3⃣");
+                var fourEmoji = new Emoji("4⃣");
+                var fiveEmoji = new Emoji("5⃣");
+
+                message = $"{message}\n*React with their number to give activity*";
+                await MessageHelper.SendMessageWithReactionsAsync(Context.Channel, message, false, null, oneEmoji, twoEmoji, threeEmoji, fourEmoji, fiveEmoji);
+                //TODO: Do something with this
+            }
         }
 
         [Command("add")]
@@ -51,21 +95,24 @@ namespace EithonBot.Discord.Commands
         public async Task AddActivityAsync([Summary("The Activity type")]string activity, [Summary("The user")]IUser user)
         {
             //TODO: Fix exceptions
-            if (!PermissionsHelper.UserHasRole(Context.User, "Officer")) await Context.Channel.SendMessageAsync("Officer role is required to execute this command");
+            if (!PermissionsHelper.UserHasRole(Context.User, "Officer")) await Context.Channel.SendMessageAsync("``Officer`` role is required to execute this command");
             else {
                 string message;
                 var activityHeaders = DatabaseHelper.GetActivityHeaders(true);
                 if (activityHeaders.Contains(activity))
                 {
-                    if (activity == "InactivityNotice") {
-                        await Context.Channel.SendMessageAsync("Currently you can only add your own inactivity through the !activity inactivitynotice <message> command");
+                    if (activity == "InactivityNotice")
+                    {
+                        message = "Currently you can only add your own inactivity through the ``!activity InactivityNotice add <message>`` command";
+                        await Context.Channel.SendMessageAsync(message);
                     }
                     else {
                         var familyName = MiscHelper.GetFamilyName(Context, user);
-                        var response = _spreadsheetLogic.AddActivity(familyName, activity);
-                        var memberActivity = _spreadsheetLogic.GetActivity(familyName);
+                        var response = SpreadsheetLogic.AddActivity(familyName, activity);
+                        SpreadsheetLogic.UpdateField(familyName, "Activity last updated", DateTime.Now.ToString());
+                        var memberActivity = SpreadsheetLogic.GetActivity(familyName);
                         message = response + " Their activity profile is now as follows:";
-                        await Context.Channel.SendMessageAsync(message, false, EmbedHelper.UserActivityEmbed(user, memberActivity));
+                        await Context.Channel.SendMessageAsync(message, false, EmbedHelper.ActivityProfileEmbed(user, memberActivity));
                     }
                 }
                 else
@@ -87,10 +134,10 @@ namespace EithonBot.Discord.Commands
             if (activityHeaders.Contains(activity))
             {
                 var familyName = MiscHelper.GetFamilyName(Context, user);
-                var response = _spreadsheetLogic.RemoveActivity(familyName, activity);
-                var memberActivity = _spreadsheetLogic.GetActivity(familyName);
+                var response = SpreadsheetLogic.RemoveActivity(familyName, activity);
+                var memberActivity = SpreadsheetLogic.GetActivity(familyName);
                 message = response + " Their activity is now as follows:";
-                await Context.Channel.SendMessageAsync(message, false, EmbedHelper.UserActivityEmbed(user, memberActivity));
+                await Context.Channel.SendMessageAsync(message, false, EmbedHelper.ActivityProfileEmbed(user, memberActivity));
             }
             else
             {

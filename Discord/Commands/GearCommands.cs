@@ -19,9 +19,9 @@ namespace EithonBot.Discord.Commands
         public async Task GetOwnGear()
         {
             var familyName = MiscHelper.GetFamilyName(Context, Context.User);
-            var memberGear = _spreadsheetLogic.GetGear(familyName);
+            var memberGear = SpreadsheetLogic.GetGear(familyName);
             if (memberGear == null) await Context.Channel.SendMessageAsync($"Could not find any gear for {Context.User.Mention}. You can add it with the ``!gear <stat> <value>`` command");
-            else await Context.Channel.SendMessageAsync("",false, EmbedHelper.UserGearEmbed(Context.User, memberGear));
+            else await Context.Channel.SendMessageAsync("",false, EmbedHelper.GearProfileEmbed(Context.User, memberGear));
         }
 
         [Command]
@@ -29,26 +29,65 @@ namespace EithonBot.Discord.Commands
         public async Task GetGearOfUser([Summary("The user")]IUser user)
         {
             var familyName = MiscHelper.GetFamilyName(Context, user);
-            var memberGear = _spreadsheetLogic.GetGear(familyName);
+            var memberGear = SpreadsheetLogic.GetGear(familyName);
             if (memberGear == null) await Context.Channel.SendMessageAsync($"Could not find any gear for {user.Mention}. They can add it with the ``!gear <stat> <value>`` command");
-            else await Context.Channel.SendMessageAsync("", false, EmbedHelper.UserGearEmbed(user, memberGear));
+            else await Context.Channel.SendMessageAsync("", false, EmbedHelper.GearProfileEmbed(user, memberGear));
         }
 
         //TODO: Create a !gear help command (using the summaries already added?)
 
+
+        [Command("comment")]
+        [Summary("Sets your gear comment")]
+        [Priority(2)]
+        public async Task SetGearComment([Remainder][Summary("Gear comment message")] string gearComment)
+        {
+            var familyName = MiscHelper.GetFamilyName(Context, Context.User);
+            var response = SpreadsheetLogic.UpdateField(familyName, "GearComment", gearComment);
+            SpreadsheetLogic.UpdateField(familyName, "Activity last updated", DateTime.Now.ToString());
+            var message = response + " Check your updated gear profile with with ``!gear``";
+            await Context.Channel.SendMessageAsync(message);
+        }
+
+        [Command("comment remove")]
+        [Summary("Removes your gear comment")]
+        [Priority(3)]
+        public async Task RemoveGearComment()
+        {
+            var familyName = MiscHelper.GetFamilyName(Context, Context.User);
+            var response = SpreadsheetLogic.UpdateField(familyName, "GearComment", "");
+            SpreadsheetLogic.UpdateField(familyName, "Gear last updated", DateTime.Now.ToString());
+            var message = response + " Check your updated gear profile with with ``!gear``";
+            await Context.Channel.SendMessageAsync(message);
+        }
+
+        [Command("GearComment remove")]
+        [Summary("Removes your GearComment")]
+        [Priority(3)]
+        public async Task RemoveInactivityNotice()
+        {
+            var familyName = MiscHelper.GetFamilyName(Context, Context.User);
+            var response = SpreadsheetLogic.UpdateField(familyName, "GearComment", "");
+            SpreadsheetLogic.UpdateField(familyName, "Gear last updated", DateTime.Now.ToString());
+            var message = response + " Check your updated gear profile with with ``!gear``";
+            await Context.Channel.SendMessageAsync(message);
+        }
+
+
         [Command]
         [Summary("Sets the selected stat to the specified value")]
-        public async Task UpdateStatAsync([Summary("The stat to be changed")] string stat, [Remainder][Summary("The user's level")] string value)
+        [Priority(1)]
+        public async Task UpdateStatAsync([Summary("The stat to be changed")] string stat, [Remainder][Summary("The value of stat")] string value)
         {
             string message;
             var gearHeaders = DatabaseHelper.GetGearHeaders(true);
             if (gearHeaders.Contains(stat))
             {
                 var familyName = MiscHelper.GetFamilyName(Context, Context.User);
-                var response = _spreadsheetLogic.updateGearStat(familyName, stat, value);
-                var memberGear = _spreadsheetLogic.GetGear(familyName);
-                message = response + " Your gear profile is now as follows:";
-                await Context.Channel.SendMessageAsync(message, false, EmbedHelper.UserGearEmbed(Context.User, memberGear));
+                var response = SpreadsheetLogic.UpdateField(familyName, stat, value);
+                SpreadsheetLogic.UpdateField(familyName, "Gear last updated", DateTime.Now.ToString());
+                message = response + " Check your updated gear profile with with ``!gear``";
+                await Context.Channel.SendMessageAsync(message);
             }
             else {
                 var gearHeadersString = String.Join("\n- ", gearHeaders);

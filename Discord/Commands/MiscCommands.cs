@@ -24,13 +24,12 @@ namespace EithonBot
                 await Context.Channel.SendMessageAsync("Officer role required to execute this command");
                 return;
             }
-            if (_spreadsheetLogic.MemberExists(familyName))
+            if (SpreadsheetLogic.MemberExists(familyName))
             {
                 await Context.Channel.SendMessageAsync("Member is already added");
                 return;
             }
-
-            _spreadsheetLogic.AddMember(familyName, characterName);
+            SpreadsheetLogic.AddMember(familyName, characterName);
             await Context.Channel.SendMessageAsync("Added member to spreadsheet");
         }
 
@@ -48,13 +47,13 @@ namespace EithonBot
                 await Context.Channel.SendMessageAsync("Officer role required to execute this command");
                 return;
             }
-            if (!_spreadsheetLogic.MemberExists(familyName))
+            if (!SpreadsheetLogic.MemberExists(familyName))
             {
                 await Context.Channel.SendMessageAsync("Member does not exist on the spreadsheet");
                 return;
             }
 
-            _spreadsheetLogic.RemoveMember(familyName);
+            SpreadsheetLogic.RemoveMember(familyName);
             await Context.Channel.SendMessageAsync("Removed member from spreadsheet");
         }
     }
@@ -66,7 +65,7 @@ namespace EithonBot
         [Summary("Resets signups")]
         public async Task ResetSignups()
         {
-            _spreadsheetLogic.ResetSignups();
+            SpreadsheetLogic.ResetSignups();
             await Context.Channel.SendMessageAsync("Reset Signups");
         }
 
@@ -74,7 +73,7 @@ namespace EithonBot
         [Summary("Resets activity")]
         public async Task ResetActivity()
         {
-            _spreadsheetLogic.ResetActivity();
+            SpreadsheetLogic.ResetActivity();
             await Context.Channel.SendMessageAsync("Reset Activity");
         }
     }
@@ -108,10 +107,10 @@ namespace EithonBot
 
             var infoMessage = await Context.Channel.SendMessageAsync("**Please react to the following messages to indicate your participation in the coming guild activities:**");
 
-            var eventMessage = await MessageHelper.SendMessageWithReactionsAsync(Context.Message, "Event. Sunday event", false, null, greenCheckEmoji, xEmoji, greyQuestionEmoji);
-            var mondayMessage = await MessageHelper.SendMessageWithReactionsAsync(Context.Message, "1. Monday nodewar", false, null, greenCheckEmoji, xEmoji, greyQuestionEmoji);
-            var wednesdayMessage = await MessageHelper.SendMessageWithReactionsAsync(Context.Message, "2. Wednesday nodewar", false, null, greenCheckEmoji, xEmoji, greyQuestionEmoji);
-            var fridayMessage = await MessageHelper.SendMessageWithReactionsAsync(Context.Message, "3. Friday nodewar", false, null, greenCheckEmoji, xEmoji, greyQuestionEmoji);
+            var eventMessage = await MessageHelper.SendMessageWithReactionsAsync(Context.Channel, "Event. Sunday event", false, null, greenCheckEmoji, xEmoji, greyQuestionEmoji);
+            var mondayMessage = await MessageHelper.SendMessageWithReactionsAsync(Context.Channel, "1. Monday nodewar", false, null, greenCheckEmoji, xEmoji, greyQuestionEmoji);
+            var wednesdayMessage = await MessageHelper.SendMessageWithReactionsAsync(Context.Channel, "2. Wednesday nodewar", false, null, greenCheckEmoji, xEmoji, greyQuestionEmoji);
+            var fridayMessage = await MessageHelper.SendMessageWithReactionsAsync(Context.Channel, "3. Friday nodewar", false, null, greenCheckEmoji, xEmoji, greyQuestionEmoji);
         }
     }
 }

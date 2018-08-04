@@ -10,7 +10,42 @@ namespace EithonBot.Discord.Helpers
 {
     class EmbedHelper
     {
-        public static Embed UserGearEmbed(IUser user, MemberGear memberGear)
+
+        internal static Embed SignupProfileEmbed(IUser user, MemberSignupData memberSignupData)
+        {
+            var guildUser = (SocketGuildUser)user;
+            var classRole = MiscHelper.GetClassRoleOfUser(user);
+            if (classRole == null) classRole = "N/A";
+
+            var builder = new EmbedBuilder();
+
+            builder.WithDescription($"**{memberSignupData.SignupComment.Name}:** {memberSignupData.SignupComment.Value}");
+
+            var fields = new List<EmbedFieldBuilder>{
+                new EmbedFieldBuilder{ Name = memberSignupData.FirstEvent.Name, Value = memberSignupData.FirstEvent.Value, IsInline = true },
+                new EmbedFieldBuilder{ Name = memberSignupData.SecondEvent.Name, Value = memberSignupData.SecondEvent.Value, IsInline = true },
+                new EmbedFieldBuilder{ Name = memberSignupData.ThirdEvent.Name, Value = memberSignupData.ThirdEvent.Value, IsInline = true },
+                new EmbedFieldBuilder{ Name = memberSignupData.FourthEvent.Name, Value = memberSignupData.FourthEvent.Value, IsInline = true },
+            };
+            builder.Fields = fields;
+
+            //builder.WithImageUrl(memberSignupData.GearLink);
+
+            //var footer = new EmbedFooterBuilder();
+            //footer.WithText($"Last updated: {memberSignupData.GearLastUpdated}");
+            //builder.WithFooter(footer);
+
+            var author = new EmbedAuthorBuilder();
+            author.WithIconUrl(guildUser.GetAvatarUrl());
+            author.WithName(guildUser.Nickname);
+            builder.WithAuthor(author);
+
+            builder.WithColor(Color.Red);
+
+            return builder.Build();
+        }
+
+        public static Embed GearProfileEmbed(IUser user, MemberGear memberGear)
         {
             var guildUser = (SocketGuildUser)user;
             var classRole = MiscHelper.GetClassRoleOfUser(user);
@@ -24,7 +59,7 @@ namespace EithonBot.Discord.Helpers
                 $"**Gear Link:** {memberGear.GearLink}\n" +
                 $"**Gear Comment:** {memberGear.GearComment}");
 
-            var gearScoreFields = new List<EmbedFieldBuilder>{
+            var fields = new List<EmbedFieldBuilder>{
                 new EmbedFieldBuilder{ Name = "AP", Value = memberGear.AP, IsInline = true },
                 new EmbedFieldBuilder{ Name = "AAP", Value = memberGear.AAP, IsInline = true },
                 new EmbedFieldBuilder{ Name = "DP", Value = memberGear.DP, IsInline = true },
@@ -33,7 +68,7 @@ namespace EithonBot.Discord.Helpers
                 new EmbedFieldBuilder{ Name = "AlchStone", Value = memberGear.AlchStone, IsInline = true },
                 new EmbedFieldBuilder{ Name = "Axe", Value = memberGear.Axe, IsInline = true },
             };
-            builder.Fields = gearScoreFields;
+            builder.Fields = fields;
 
             if (memberGear.GearLink == "N/A") memberGear.GearLink = "";
             builder.WithImageUrl(memberGear.GearLink);
@@ -52,7 +87,7 @@ namespace EithonBot.Discord.Helpers
             return builder.Build();
         }
 
-        public static Embed UserActivityEmbed(IUser user, MemberActivity memberActivity)
+        public static Embed ActivityProfileEmbed(IUser user, MemberActivity memberActivity)
         {
             var guildUser = (SocketGuildUser)user;
 

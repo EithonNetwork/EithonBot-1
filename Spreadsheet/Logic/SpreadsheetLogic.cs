@@ -24,22 +24,33 @@ namespace EithonBot
     {
         // If modifying these scopes, delete your previously saved credentials
         // at ~/.credentials/sheets.googleapis.com-dotnet-quickstart.json
+        private static SpreadsheetLogic _instance;
         static string[] Scopes = { SheetsService.Scope.Spreadsheets };
         static string ApplicationName = "Discord integration";
         private string _spreadsheetId;
-        private string _sheetName;
-        private int _columnHeadersRow;
-        private IList<IList<object>> _columnHeaders;
-        private string _familyNamesColumn;
+
+        private string _databaseSheet;
+        private int _databaseColumnHeadersRow;
+        private IList<IList<object>> _databaseColumnHeaders;
+
+        private string _partiesSheet;
+        private int _partyColumnHeadersRow;
+        private IList<IList<object>> _partyColumnHeaders;
+
+        private string _databaseFamilyNamesColumn;
         //TODO: Update this after added/removed member so system works if you were added after the bot was started
-        private IList<IList<object>> _familyNames;
+        private IList<IList<object>> _databaseFamilyNames;
         private SheetsService _service;
+        
+        public static SpreadsheetLogic Instance => _instance;
 
-        public SpreadsheetLogic(string spreadsheetId, string sheetName, string familyNamesColumn, int columnHeadersRow)
+        static SpreadsheetLogic()
         {
-            _spreadsheetId = spreadsheetId;
-            _sheetName = sheetName;
+            _instance = new SpreadsheetLogic("1pLMcQ7Uxha4g3c_poI7YTzZXla7omFwhQRUiCg8IzKI", "Guild database", "A", 3, "NW Parties", 3);
+        }
 
+        private SpreadsheetLogic(string spreadsheetId, string databaseSheet, string databaseFamilyNamesColumn, int databaseHeadersRow, string partiesSheet, int partiesSheetHeadersRow)
+        {
             UserCredential credential;
             using (var stream =
                 new FileStream("client_secret.json", FileMode.Open, FileAccess.Read))
@@ -64,16 +75,21 @@ namespace EithonBot
                 ApplicationName = ApplicationName,
             });
 
-            _columnHeadersRow = columnHeadersRow;
-            _columnHeaders = GetRowValues(columnHeadersRow);
-            _familyNamesColumn = familyNamesColumn;
-            _familyNames = GetColumnValues(familyNamesColumn);
+            _spreadsheetId = spreadsheetId;
+            _databaseSheet = databaseSheet;
+            _databaseColumnHeadersRow = databaseHeadersRow;
+            _databaseColumnHeaders = GetRowValues(_databaseSheet, databaseHeadersRow);
+            _partiesSheet = partiesSheet;
+            _partyColumnHeadersRow = partiesSheetHeadersRow;
+            _partyColumnHeaders = GetRowValues(_partiesSheet, _partyColumnHeadersRow);
+            _databaseFamilyNamesColumn = databaseFamilyNamesColumn;
+            _databaseFamilyNames = GetColumnValues(databaseFamilyNamesColumn);
         }
 
         //TODO: Make a proper system for this
         internal bool MemberExists(string familyName)
         {
-            var row = GetRowOfValue(familyName, _familyNames);
+            var row = GetRowOfValue(familyName, _databaseFamilyNames);
             if (row == 0) return false;
             return true;
         }
@@ -87,26 +103,26 @@ namespace EithonBot
             values.Add(obj);
 
             SpreadsheetsResource.ValuesResource.AppendRequest request =
-                    _service.Spreadsheets.Values.Append(new ValueRange() { Values = values }, _spreadsheetId, "Guild database!A4:Y4");
+                    _service.Spreadsheets.Values.Append(new ValueRange() { Values = values }, _spreadsheetId, $"{_databaseSheet}!A5:Y5");
             request.InsertDataOption = SpreadsheetsResource.ValuesResource.AppendRequest.InsertDataOptionEnum.INSERTROWS;
             request.ValueInputOption = SpreadsheetsResource.ValuesResource.AppendRequest.ValueInputOptionEnum.RAW;
             var response = request.Execute();
-            _familyNames = GetColumnValues(_familyNamesColumn);
+            _databaseFamilyNames = GetColumnValues(_databaseFamilyNamesColumn);
         }
 
         internal void RemoveMember(string familyName)
         {
-            var row = GetRowOfValue(familyName, _familyNames);
+            var row = GetRowOfValue(familyName, _databaseFamilyNames);
             if (row == 0) return;
 
             SpreadsheetHandler.DeleteRow(_service, _spreadsheetId, row);
-            _familyNames = GetColumnValues(_familyNamesColumn);
+            _databaseFamilyNames = GetColumnValues(_databaseFamilyNamesColumn);
         }
 
         internal string ResetSignups()
         {
-            string[] headersOfColumnsToReset = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Signup Comments" };
-            clearColumnsBasedOnHeaders(_columnHeaders, headersOfColumnsToReset);
+            string[] headersOfColumnsToReset = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "SignupComment" };
+            clearColumnsBasedOnHeaders(_databaseColumnHeaders, headersOfColumnsToReset);
 
             return "Reset nodewar signups. Use !nodewarsignup in the announcement channel to create a new signup interface for next week.";
         }
@@ -114,7 +130,7 @@ namespace EithonBot
         internal string ResetActivity()
         {
             string[] headersOfColumnsToReset = { "GQ", "NW", "VILLA", "MILITIA", "SEAMONSTERS"};
-            clearColumnsBasedOnHeaders(_columnHeaders, headersOfColumnsToReset);
+            clearColumnsBasedOnHeaders(_databaseColumnHeaders, headersOfColumnsToReset);
 
             return "Reset activity signups.";
         }
@@ -126,7 +142,7 @@ namespace EithonBot
                 var column = GetColumnOfValue(rowValues, i);
                 if (column != null)
                 {
-                    ClearRange("Guild database!" + column + "4:" + column);
+                    ClearRange($"{_databaseSheet}!{column}{_databaseColumnHeadersRow+2}:{column}");
                 }
             }
         }
@@ -134,7 +150,7 @@ namespace EithonBot
         //TODO: How do I make this proper async
         internal async void Signup(string familyName, string value, string signupMessage)
         {
-            var row = GetRowOfValue(familyName, _familyNames);
+            var row = GetRowOfValue(familyName, _databaseFamilyNames);
             if (row == 0) return;
 
             string columnHeader = null;
@@ -146,112 +162,181 @@ namespace EithonBot
             } while (weekDay.Day != DayEnum.Sunday);
             if (columnHeader == null) return;
 
-            var column = GetColumnOfValue(_columnHeaders, columnHeader);
+            var column = GetColumnOfValue(_databaseColumnHeaders, columnHeader);
             if (column == null) return;
             
-            SpreadsheetHandler.UpdateCell(_service, _spreadsheetId ,value, "Guild database!" + column + row);
+            SpreadsheetHandler.UpdateCell(_service, _spreadsheetId ,value, $"{_databaseSheet}!{column}{row}");
         }
 
-        internal string updateGearStat(string familyName, string stat, string value)
+        internal MemberSignupData GetSignupData(string familyName)
         {
-            string columnHeader = stat;
+            var dictionary = new Dictionary<string, string>();
 
-            var message = updateField(familyName, stat, value);
+            var row = GetRowOfValue(familyName, _databaseFamilyNames);
+            if (row == 0) return null;
 
-            var dateTime = DateTime.Now;
-            updateField(familyName, "Gear last updated", dateTime.ToString());
+            var columnHeaders = DatabaseHelper.GetSignupHeaders();
 
-            return message;
+            List<string> currentHeaders = new List<string>(); 
+            foreach (var item in columnHeaders)
+            {
+                var result = _databaseColumnHeaders.SelectMany(i => i).ToList();
+
+                if (result.Contains(item)) currentHeaders.Add(item);
+            }
+
+            var columnLetters = DatabaseHelper.GetColumnLetters();
+
+            var startColumn = GetColumnOfValue(_databaseColumnHeaders, currentHeaders.FirstOrDefault());
+            var endColumn = GetColumnOfValue(_databaseColumnHeaders, currentHeaders.LastOrDefault());
+            var indexOfEndColumn = columnLetters.IndexOf(endColumn);
+
+            var values = SpreadsheetHandler.getValuesFromRange(_service, _spreadsheetId, $"{_databaseSheet}!{startColumn}{row}:{endColumn}{row}");
+            if (values == null) return null;
+
+            for (var i = 0; i < currentHeaders.Count(); i++)
+            {
+                string value;
+                try
+                {
+                    value = values[0][i].ToString();
+                }
+                catch
+                {
+                    value = "N/A";
+                }
+                if (value == "") value = "N/A";
+                dictionary.TryAdd(currentHeaders[i], value);
+            }
+
+            //TODO: Better way of doing this (So I don't have to update headers in multiple places)
+            var memberSignupData = new MemberSignupData();
+            memberSignupData.FirstEvent.Name = currentHeaders[0];
+            memberSignupData.FirstEvent.Value = dictionary.GetValueOrDefault(currentHeaders[0]);
+
+            memberSignupData.SecondEvent.Name = currentHeaders[1];
+            memberSignupData.SecondEvent.Value = dictionary.GetValueOrDefault(currentHeaders[1]);
+
+            memberSignupData.ThirdEvent.Name = currentHeaders[2];
+            memberSignupData.ThirdEvent.Value = dictionary.GetValueOrDefault(currentHeaders[2]);
+
+            memberSignupData.FourthEvent.Name = currentHeaders[3];
+            memberSignupData.FourthEvent.Value = dictionary.GetValueOrDefault(currentHeaders[3]);
+
+            memberSignupData.SignupComment.Name = currentHeaders.LastOrDefault();
+            memberSignupData.SignupComment.Value = dictionary.GetValueOrDefault(currentHeaders.LastOrDefault());
+            
+            return memberSignupData;
         }
 
-        internal string updateField(string familyName, string header, string value)
+        internal string UpdateField(string familyName, string header, string value)
         {
-            var row = GetRowOfValue(familyName, _familyNames);
+            var row = GetRowOfValue(familyName, _databaseFamilyNames);
             if (row == 0) return "Could not find family name";
 
-            var headerColumn = GetColumnOfValue(_columnHeaders, header);
-            if (headerColumn == null) return "Could not find the header \"" + header + "\"";
-            SpreadsheetHandler.UpdateCell(_service, _spreadsheetId, value, "Guild database!" + headerColumn + row);
+            var column = GetColumnOfValue(_databaseColumnHeaders, header);
+            if (column == null) return "Could not find the header \"" + header + "\"";
+            SpreadsheetHandler.UpdateCell(_service, _spreadsheetId, value, $"{_databaseSheet}!{column}{row}");
 
             return "Updated " + header + ".";
         }
 
         internal MemberGear GetGear(string familyName)
         {
-            var gearValues = new Dictionary<string, string>();
+            var dictionary = new Dictionary<string, string>();
 
-            var row = GetRowOfValue(familyName, _familyNames);
-            //if (row == 0) return "Could not find family name";
+            var row = GetRowOfValue(familyName, _databaseFamilyNames);
+            if (row == 0) return null;
 
             var columnHeaders = DatabaseHelper.GetGearHeaders();
 
-            var startColumn = GetColumnOfValue(_columnHeaders, columnHeaders.FirstOrDefault());
-            var endColumn = GetColumnOfValue(_columnHeaders, columnHeaders.LastOrDefault());
-            var values = SpreadsheetHandler.getValuesFromRange(_service, _spreadsheetId, "Guild database!" + startColumn + row + ":" + endColumn + row);
+            var startColumn = GetColumnOfValue(_databaseColumnHeaders, columnHeaders.FirstOrDefault());
+            var endColumn = GetColumnOfValue(_databaseColumnHeaders, columnHeaders.LastOrDefault());
+            var values = SpreadsheetHandler.getValuesFromRange(_service, _spreadsheetId, $"{_databaseSheet}!{startColumn}{row}:{endColumn}{row}");
             if (values == null) return null;
 
             for (var i = 0; i < columnHeaders.Count();i++)
             {
-                var value = values[0][i];
-                if ((string)value == "") value = "N/A";
-                gearValues.TryAdd(columnHeaders[i], value.ToString());
+                string value;
+                try
+                {
+                    value = values[0][i].ToString();
+                }
+                catch
+                {
+                    value = "N/A";
+                }
+                if (value == "") value = "N/A";
+                dictionary.TryAdd(columnHeaders[i], value);
             }
 
-            //TODO: Better way of doing this (So I don't have to update gear headers in multiple places
+            //TODO: Better way of doing this (So I don't have to update gear headers in multiple places)
             var memberGear = new MemberGear();
-            memberGear.LVL = gearValues.GetValueOrDefault("LVL");
-            memberGear.Renown = gearValues.GetValueOrDefault("Renown");
+            memberGear.LVL = dictionary.GetValueOrDefault("LVL");
+            memberGear.Renown = dictionary.GetValueOrDefault("Renown");
 
-            memberGear.AP = gearValues.GetValueOrDefault("AP");
-            memberGear.AAP = gearValues.GetValueOrDefault("AAP");
-            memberGear.DP = gearValues.GetValueOrDefault("DP");
+            memberGear.AP = dictionary.GetValueOrDefault("AP");
+            memberGear.AAP = dictionary.GetValueOrDefault("AAP");
+            memberGear.DP = dictionary.GetValueOrDefault("DP");
 
             //memberGear.Class = gearValues.GetValueOrDefault("Class");
-            memberGear.AlchStone = gearValues.GetValueOrDefault("AlchStone");
-            memberGear.Axe = gearValues.GetValueOrDefault("Axe");
+            memberGear.AlchStone = dictionary.GetValueOrDefault("AlchStone");
+            memberGear.Axe = dictionary.GetValueOrDefault("Axe");
 
-            memberGear.GearComment = gearValues.GetValueOrDefault("GearComment");
-            memberGear.GearLink = gearValues.GetValueOrDefault("GearLink");
-            memberGear.GearLastUpdated = gearValues.GetValueOrDefault("Gear last updated");
+            memberGear.GearComment = dictionary.GetValueOrDefault("GearComment");
+            memberGear.GearLink = dictionary.GetValueOrDefault("GearLink");
+            memberGear.GearLastUpdated = dictionary.GetValueOrDefault("Gear last updated");
             return memberGear;
+        }
+
+        internal List<object> GetPartyMembers(string partyName)
+        {
+            var column = GetColumnOfValue(_partyColumnHeaders, partyName);
+            if (column == null) return null;
+
+            var partyMembers = SpreadsheetHandler.getValuesFromRange(_service, _spreadsheetId, $"{_partiesSheet}!{column}{_partyColumnHeadersRow + 1}:{column}");
+
+            var result = partyMembers.SelectMany(i => i).ToList();
+
+            return result;
         }
 
         internal string AddActivity(string familyName, string activityType)
         {
-            var row = GetRowOfValue(familyName, _familyNames);
+            var row = GetRowOfValue(familyName, _databaseFamilyNames);
             if (row == 0) return "Could not find family name";
 
             string columnHeader = activityType;
 
-            var statColumn = GetColumnOfValue(_columnHeaders, columnHeader);
-            if (statColumn == null) return "Could not find the stat \"" + activityType + "\"";
-            var cellOldValue = SpreadsheetHandler.getValuesFromRange(_service, _spreadsheetId, "Guild database!" + statColumn + row);
+            var activityColumn = GetColumnOfValue(_databaseColumnHeaders, columnHeader);
+            if (activityColumn == null) return "Could not find the stat \"" + activityType + "\"";
+            var cellOldValue = SpreadsheetHandler.getValuesFromRange(_service, _spreadsheetId, $"{_databaseSheet}!{activityColumn}{row}");
             int newValue;
             if (cellOldValue == null) newValue = 1;
             else newValue = Convert.ToInt32(cellOldValue[0][0]) + 1;
             var cellNewValue = newValue.ToString();
 
-            SpreadsheetHandler.UpdateCell(_service, _spreadsheetId, cellNewValue, "Guild database!" + statColumn + row);
+            SpreadsheetHandler.UpdateCell(_service, _spreadsheetId, cellNewValue, $"{_databaseSheet}!{activityColumn}{row}");
 
             var dateTime = DateTime.Now;
-            var lastUpdatedColumn = GetColumnOfValue(_columnHeaders, "Activity last updated");
-            if (statColumn == null) return "Could not find the column \"Activity last updated\"";
-            SpreadsheetHandler.UpdateCell(_service, _spreadsheetId, dateTime.ToString(), "Guild database!" + lastUpdatedColumn + row);
+            var lastUpdatedColumn = GetColumnOfValue(_databaseColumnHeaders, "Activity last updated");
+            if (activityColumn == null) return "Could not find the column \"Activity last updated\"";
+            SpreadsheetHandler.UpdateCell(_service, _spreadsheetId, dateTime.ToString(), $"{_databaseSheet}!{lastUpdatedColumn}{row}");
 
             return "Updated " + activityType + ".";
         }
 
         internal string RemoveActivity(string familyName, string activityType)
         {
-            var row = GetRowOfValue(familyName, _familyNames);
+            var row = GetRowOfValue(familyName, _databaseFamilyNames);
             if (row == 0) return "Could not find family name";
 
             string columnHeader = activityType;
 
-            var statColumn = GetColumnOfValue(_columnHeaders, columnHeader);
-            if (statColumn == null) return "Could not find the stat \"" + activityType + "\"";
+            var activityColumn = GetColumnOfValue(_databaseColumnHeaders, columnHeader);
+            if (activityColumn == null) return "Could not find the stat \"" + activityType + "\"";
 
-            var cellOldValue = SpreadsheetHandler.getValuesFromRange(_service, _spreadsheetId, "Guild database!" + statColumn + row);
+            var cellOldValue = SpreadsheetHandler.getValuesFromRange(_service, _spreadsheetId, $"{_databaseSheet}!{activityColumn}{row}");
             int newValue;
             if (cellOldValue == null) return null;
             else newValue = Convert.ToInt32(cellOldValue[0][0]) - 1;
@@ -261,50 +346,53 @@ namespace EithonBot
             if (newValue == 0) cellNewValue = "";
             else cellNewValue = newValue.ToString();
 
-            SpreadsheetHandler.UpdateCell(_service, _spreadsheetId, cellNewValue, "Guild database!" + statColumn + row);
-
-            var dateTime = DateTime.Now;
-            var lastUpdatedColumn = GetColumnOfValue(_columnHeaders, "Activity last updated");
-            if (statColumn == null) return "Could not find the column \"Activity last updated\"";
-            SpreadsheetHandler.UpdateCell(_service, _spreadsheetId, dateTime.ToString(), "Guild database!" + lastUpdatedColumn + row);
+            SpreadsheetHandler.UpdateCell(_service, _spreadsheetId, cellNewValue, $"{_databaseSheet}!{activityColumn}{row}");
 
             return "Updated " + activityType + ".";
         }
 
         internal MemberActivity GetActivity(string familyName)
         {
-            var activityValues = new Dictionary<string, string>();
+            var dictionary = new Dictionary<string, string>();
 
-            var row = GetRowOfValue(familyName, _familyNames);
+            var row = GetRowOfValue(familyName, _databaseFamilyNames);
             //if (row == 0) return "Could not find family name";
 
             var columnHeaders = DatabaseHelper.GetActivityHeaders();
 
-            var startColumn = GetColumnOfValue(_columnHeaders, columnHeaders.FirstOrDefault());
-            var endColumn = GetColumnOfValue(_columnHeaders, columnHeaders.LastOrDefault());
-            var values = SpreadsheetHandler.getValuesFromRange(_service, _spreadsheetId, "Guild database!" + startColumn + row + ":" + endColumn + row);
+            var startColumn = GetColumnOfValue(_databaseColumnHeaders, columnHeaders.FirstOrDefault());
+            var endColumn = GetColumnOfValue(_databaseColumnHeaders, columnHeaders.LastOrDefault());
+            var values = SpreadsheetHandler.getValuesFromRange(_service, _spreadsheetId, $"{_databaseSheet}!{startColumn}{row}:{endColumn}{row}");
             if (values == null) return null;
 
             for (var i = 0; i < columnHeaders.Count(); i++)
             {
-                var value = values[0][i];
-                if ((string)value == "") value = "N/A";
-                activityValues.TryAdd(columnHeaders[i], value.ToString());
+                string value;
+                try
+                {
+                    value = values[0][i].ToString();
+                }
+                catch
+                {
+                    value = "N/A";
+                }
+                if (value == "") value = "N/A";
+                dictionary.TryAdd(columnHeaders[i], value);
             }
 
             //TODO: Better way of doing this (So I don't have to update gear headers in multiple places
             var memberActivity = new MemberActivity();
-            memberActivity.Tier = activityValues.GetValueOrDefault("Tier");
-            memberActivity.GA = activityValues.GetValueOrDefault("GA");
+            memberActivity.Tier = dictionary.GetValueOrDefault("Tier");
+            memberActivity.GA = dictionary.GetValueOrDefault("GA");
 
-            memberActivity.GQ = activityValues.GetValueOrDefault("GQ");
-            memberActivity.NW = activityValues.GetValueOrDefault("NW");
-            memberActivity.Villa = activityValues.GetValueOrDefault("Villa");
-            memberActivity.Militia = activityValues.GetValueOrDefault("Militia");
-            memberActivity.Seamonsters = activityValues.GetValueOrDefault("Seamonsters");
+            memberActivity.GQ = dictionary.GetValueOrDefault("GQ");
+            memberActivity.NW = dictionary.GetValueOrDefault("NW");
+            memberActivity.Villa = dictionary.GetValueOrDefault("Villa");
+            memberActivity.Militia = dictionary.GetValueOrDefault("Militia");
+            memberActivity.Seamonsters = dictionary.GetValueOrDefault("Seamonsters");
 
-            memberActivity.InactivityNotice = activityValues.GetValueOrDefault("InactivityNotice");
-            memberActivity.ActivityLastUpdated = activityValues.GetValueOrDefault("Activity last updated");
+            memberActivity.InactivityNotice = dictionary.GetValueOrDefault("InactivityNotice");
+            memberActivity.ActivityLastUpdated = dictionary.GetValueOrDefault("Activity last updated");
             return memberActivity;
         }
 
@@ -352,7 +440,7 @@ namespace EithonBot
                 }
             }
             if (columnNumber == 0) return null;
-            string[] columnLetters = new[] { "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", "AA", "AB", "AC", "AD", "AE", "AF", "AG", "AH", "AI", "AJ", "AK", "AL", "AM", "AN", "AO", "AP", "AQ", "AR", "AS", "AT", "AU", "AV", "AW", "AX", "AY", "AZ", "BA", "BB", "BC", "BD", "BE", "BF", "BG", "BH" };
+            var columnLetters = DatabaseHelper.GetColumnLetters();
             var columnLetter = columnLetters[columnNumber - 1];
 
             return columnLetter;
@@ -360,7 +448,7 @@ namespace EithonBot
 
         private IList<IList<object>> GetColumnValues(string column)
         {
-            var values = SpreadsheetHandler.getValuesFromRange(_service, _spreadsheetId, "Guild Database!" + column + ":" + column);
+            var values = SpreadsheetHandler.getValuesFromRange(_service, _spreadsheetId, $"{_databaseSheet}!{column}:{column}");
             if (values.Count == 0)
             {
                 Console.WriteLine("No data in range found");
@@ -369,9 +457,9 @@ namespace EithonBot
             return values;
         }
 
-        private IList<IList<object>> GetRowValues(int row)
+        private IList<IList<object>> GetRowValues(string sheet, int row)
         {
-            var values = SpreadsheetHandler.getValuesFromRange(_service, _spreadsheetId, "Guild Database!" + row + ":" + row);
+            var values = SpreadsheetHandler.getValuesFromRange(_service, _spreadsheetId, $"{sheet}!{row}:{row}");
             if (values.Count == 0)
             {
                 Console.WriteLine("No data in range found");

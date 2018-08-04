@@ -9,11 +9,6 @@ namespace EithonBot.Discord.Commands
 
     public class SpreadsheetModuleBase : ModuleBase<SocketCommandContext>
     {
-        public SpreadsheetLogic _spreadsheetLogic;
-
-        public SpreadsheetModuleBase()
-        {
-            _spreadsheetLogic = new SpreadsheetLogic("1pLMcQ7Uxha4g3c_poI7YTzZXla7omFwhQRUiCg8IzKI", "Nodewar Signup", "A", 3);
-        }
+        protected static SpreadsheetLogic SpreadsheetLogic => SpreadsheetLogic.Instance;
     }
 }

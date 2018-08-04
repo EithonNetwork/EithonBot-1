@@ -20,10 +20,5 @@ namespace EithonBot.Models
         public string GearComment { get; set; }
         public string GearLink { get; set; }
         public string GearLastUpdated { get; set; }
-
-        public MemberGear()
-        {
-
-        }
     }
 }
