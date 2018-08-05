@@ -19,7 +19,7 @@ namespace EithonBot.Discord.Commands
         {
             //TODO: Fix exceptions
             var familyName = MiscHelper.GetFamilyName(Context, Context.User);
-            var memberActivity = SpreadsheetLogic.GetSignupData(familyName);
+            var memberActivity = SpreadsheetCommands.GetSignupData(familyName);
             if (memberActivity == null) await Context.Channel.SendMessageAsync($"Could not find any signup data for {Context.User.Mention}. Sign up by reacting to the nodewar signup announcement.");
             else await Context.Channel.SendMessageAsync("", false, EmbedHelper.SignupProfileEmbed(Context.User, memberActivity));
         }
@@ -30,7 +30,7 @@ namespace EithonBot.Discord.Commands
         {
             //TODO: Fix exceptions
             var familyName = MiscHelper.GetFamilyName(Context, user);
-            var memberActivity = SpreadsheetLogic.GetSignupData(familyName);
+            var memberActivity = SpreadsheetCommands.GetSignupData(familyName);
             if (memberActivity == null) await Context.Channel.SendMessageAsync($"Could not find any signup data for {user.Mention}. They can sign up by reacting to the nodewar signup announcement");
             else await Context.Channel.SendMessageAsync("", false, EmbedHelper.SignupProfileEmbed(user, memberActivity));
         }
@@ -41,8 +41,8 @@ namespace EithonBot.Discord.Commands
         public async Task SetSignupComment([Remainder][Summary("Signup comment")] string signupComment)
         {
             var familyName = MiscHelper.GetFamilyName(Context, Context.User);
-            var response = SpreadsheetLogic.UpdateField(familyName, "SignupComment", signupComment);
-            var embedData = SpreadsheetLogic.GetSignupData(familyName);
+            var response = SpreadsheetCommands.UpdateField(familyName, "SignupComment", signupComment);
+            var embedData = SpreadsheetCommands.GetSignupData(familyName);
             var message = response + " Your signup profile is now as follows:";
             await Context.Channel.SendMessageAsync(message, false, EmbedHelper.SignupProfileEmbed(Context.User, embedData));
         }
@@ -53,8 +53,8 @@ namespace EithonBot.Discord.Commands
         public async Task RemoveSignupComment()
         {
             var familyName = MiscHelper.GetFamilyName(Context, Context.User);
-            var response = SpreadsheetLogic.UpdateField(familyName, "SignupComment", "");
-            var embedData = SpreadsheetLogic.GetSignupData(familyName);
+            var response = SpreadsheetCommands.UpdateField(familyName, "SignupComment", "");
+            var embedData = SpreadsheetCommands.GetSignupData(familyName);
             var message = response + " Your signup profile is now as follows:";
             await Context.Channel.SendMessageAsync(message, false, EmbedHelper.SignupProfileEmbed(Context.User, embedData));
         }

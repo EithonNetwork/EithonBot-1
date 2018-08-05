@@ -24,12 +24,12 @@ namespace EithonBot
                 await Context.Channel.SendMessageAsync("Officer role required to execute this command");
                 return;
             }
-            if (SpreadsheetLogic.MemberExists(familyName))
+            if (SpreadsheetCommands.MemberExists(familyName))
             {
                 await Context.Channel.SendMessageAsync("Member is already added");
                 return;
             }
-            SpreadsheetLogic.AddMember(familyName, characterName);
+            SpreadsheetCommands.AddMember(familyName, characterName);
             await Context.Channel.SendMessageAsync("Added member to spreadsheet");
         }
 
@@ -47,13 +47,13 @@ namespace EithonBot
                 await Context.Channel.SendMessageAsync("Officer role required to execute this command");
                 return;
             }
-            if (!SpreadsheetLogic.MemberExists(familyName))
+            if (!SpreadsheetCommands.MemberExists(familyName))
             {
                 await Context.Channel.SendMessageAsync("Member does not exist on the spreadsheet");
                 return;
             }
 
-            SpreadsheetLogic.RemoveMember(familyName);
+            SpreadsheetCommands.RemoveMember(familyName);
             await Context.Channel.SendMessageAsync("Removed member from spreadsheet");
         }
     }
@@ -65,7 +65,7 @@ namespace EithonBot
         [Summary("Resets signups")]
         public async Task ResetSignups()
         {
-            SpreadsheetLogic.ResetSignups();
+            SpreadsheetCommands.ResetSignups();
             await Context.Channel.SendMessageAsync("Reset Signups");
         }
 
@@ -73,7 +73,7 @@ namespace EithonBot
         [Summary("Resets activity")]
         public async Task ResetActivity()
         {
-            SpreadsheetLogic.ResetActivity();
+            SpreadsheetCommands.ResetActivity();
             await Context.Channel.SendMessageAsync("Reset Activity");
         }
     }

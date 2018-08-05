@@ -1,4 +1,5 @@
-﻿using System;
+﻿using EithonBot.Spreadsheet.Models;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -16,9 +17,16 @@ namespace EithonBot.Spreadsheet.NewFolder
             return columnLetters;
         }
 
-        internal static List<string> GetGearHeaders(bool getOnlyCommandEditableHeaders = false)
+        internal static DatabaseColumn GetClassColumn(Dictionary<string, DatabaseColumn> databaseColumns)
         {
-            var gearHeaders = new List<string>
+            var header = "Class";
+            var classColumn = databaseColumns.GetValueOrDefault(header);
+            return classColumn;
+        }
+
+        internal static Dictionary<string, DatabaseColumn> GetGearColumns(Dictionary<string, DatabaseColumn> databaseColumns, bool getOnlyCommandEditableHeaders = false)
+        {
+            var headers = new List<string>
             {
                 "Renown",
                 "LVL",
@@ -34,16 +42,19 @@ namespace EithonBot.Spreadsheet.NewFolder
 
             if (getOnlyCommandEditableHeaders)
             {
-                gearHeaders.Remove("Renown");
-                gearHeaders.Remove("Gear last updated");
+                headers.Remove("Renown");
+                headers.Remove("Gear last updated");
             }
 
-            return gearHeaders;
+            var colums = new Dictionary<string, DatabaseColumn>();
+            foreach (var header in headers) colums.TryAdd(header, databaseColumns.GetValueOrDefault(header));
+
+            return colums;
         }
 
-        internal static List<string> GetActivityHeaders(bool getOnlyCommandEditableHeaders = false)
+        internal static Dictionary<string, DatabaseColumn> GetActivityColumns(Dictionary<string, DatabaseColumn> databaseColumns, bool getOnlyCommandEditableHeaders = false)
         {
-            var gearHeaders = new List<string>
+            var headers = new List<string>
             {
                 "Tier",
                 "GA",
@@ -58,17 +69,20 @@ namespace EithonBot.Spreadsheet.NewFolder
 
             if (getOnlyCommandEditableHeaders)
             {
-                gearHeaders.Remove("Tier");
-                gearHeaders.Remove("GA");
-                gearHeaders.Remove("Activity last updated");
+                headers.Remove("Tier");
+                headers.Remove("GA");
+                headers.Remove("Activity last updated");
             }
 
-            return gearHeaders;
+            var colums = new Dictionary<string, DatabaseColumn>();
+            foreach (var header in headers) colums.TryAdd(header, databaseColumns.GetValueOrDefault(header));
+
+            return colums;
         }
 
-        internal static List<string> GetSignupHeaders()
+        internal static Dictionary<string, DatabaseColumn> GetSignupColumns(Dictionary<string, DatabaseColumn> databaseColumns)
         {
-            var gearHeaders = new List<string>
+            var headers = new List<string>
             {
                 "Sunday",
                 "Monday",
@@ -80,7 +94,16 @@ namespace EithonBot.Spreadsheet.NewFolder
                 "SignupComment"
             };
 
-            return gearHeaders;
+            List<string> currentHeaders = new List<string>();
+            foreach (var item in headers)
+            {
+                if (databaseColumns.ContainsKey(item)) currentHeaders.Add(item);
+            }
+
+            var colums = new Dictionary<string, DatabaseColumn>();
+            foreach (var header in currentHeaders) colums.Add(header, databaseColumns.GetValueOrDefault(header));
+
+            return colums;
         }
     }
 }

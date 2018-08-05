@@ -2,6 +2,7 @@
 using Discord.Commands;
 using Discord.WebSocket;
 using EithonBot.Models;
+using EithonBot.Spreadsheet.Models;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -10,6 +11,42 @@ namespace EithonBot.Discord.Helpers
 {
     class EmbedHelper
     {
+        private static string CreateDescription(List<DatabaseField> databaseFields)
+        {
+            string description = "";
+            foreach (var field in databaseFields)
+            {
+                var name = field.Column.ColumnHeader;
+                var value = field.CellValue;
+                if (value == null || value == "") value = "N/A";
+
+                description = $"{description}\n**{name}:** {value}";
+            }
+            return description;
+        }
+
+        private static List<EmbedFieldBuilder> CreateInlineFields(List<DatabaseField> databaseFields)
+        {
+            var discordFields = new List<EmbedFieldBuilder>();
+            foreach(var field in databaseFields)
+            {
+                if(field == null)
+                {
+                    var discordField = new EmbedFieldBuilder { Name = "Placeholder", Value = "N/A", IsInline = true };
+                    discordFields.Add(discordField);
+                }
+                else
+                {
+                    var name = field.Column.ColumnHeader;
+                    var value = field.CellValue;
+                    if (value == null || value == "") value = "N/A";
+                    var discordField = new EmbedFieldBuilder { Name = name, Value = value, IsInline = true };
+                    discordFields.Add(discordField);
+                }
+
+            }
+            return discordFields;
+        }
 
         internal static Embed SignupProfileEmbed(IUser user, MemberSignupData memberSignupData)
         {
@@ -18,15 +55,16 @@ namespace EithonBot.Discord.Helpers
             if (classRole == null) classRole = "N/A";
 
             var builder = new EmbedBuilder();
+            
+            var description = CreateDescription(new List<DatabaseField> { memberSignupData.SignupComment });
+            builder.WithDescription(description);
 
-            builder.WithDescription($"**{memberSignupData.SignupComment.Name}:** {memberSignupData.SignupComment.Value}");
-
-            var fields = new List<EmbedFieldBuilder>{
-                new EmbedFieldBuilder{ Name = memberSignupData.FirstEvent.Name, Value = memberSignupData.FirstEvent.Value, IsInline = true },
-                new EmbedFieldBuilder{ Name = memberSignupData.SecondEvent.Name, Value = memberSignupData.SecondEvent.Value, IsInline = true },
-                new EmbedFieldBuilder{ Name = memberSignupData.ThirdEvent.Name, Value = memberSignupData.ThirdEvent.Value, IsInline = true },
-                new EmbedFieldBuilder{ Name = memberSignupData.FourthEvent.Name, Value = memberSignupData.FourthEvent.Value, IsInline = true },
-            };
+            var fields = CreateInlineFields(new List<DatabaseField> {
+                memberSignupData.FirstEvent,
+                memberSignupData.SecondEvent,
+                memberSignupData.ThirdEvent,
+                memberSignupData.FourthEvent,
+            });
             builder.Fields = fields;
 
             //builder.WithImageUrl(memberSignupData.GearLink);
@@ -45,36 +83,37 @@ namespace EithonBot.Discord.Helpers
             return builder.Build();
         }
 
-        public static Embed GearProfileEmbed(IUser user, MemberGear memberGear)
+        public static Embed GearProfileEmbed(IUser user, Dictionary<string, DatabaseField> databaseFields)
         {
             var guildUser = (SocketGuildUser)user;
             var classRole = MiscHelper.GetClassRoleOfUser(user);
             if (classRole == null) classRole = "N/A";
 
             var builder = new EmbedBuilder();
-            
-            builder.WithDescription($"" +
-                $"**LVL**: {memberGear.LVL}\n" +
-                $"**Renown Score:** {memberGear.Renown}\n" +
-                $"**Gear Link:** {memberGear.GearLink}\n" +
-                $"**Gear Comment:** {memberGear.GearComment}");
 
-            var fields = new List<EmbedFieldBuilder>{
-                new EmbedFieldBuilder{ Name = "AP", Value = memberGear.AP, IsInline = true },
-                new EmbedFieldBuilder{ Name = "AAP", Value = memberGear.AAP, IsInline = true },
-                new EmbedFieldBuilder{ Name = "DP", Value = memberGear.DP, IsInline = true },
+            var description = CreateDescription(new List<DatabaseField> {
+                databaseFields.GetValueOrDefault("LVL"),
+                databaseFields.GetValueOrDefault("Renown"),
+                databaseFields.GetValueOrDefault("GearLink"),
+                databaseFields.GetValueOrDefault("GearComment")
+            });
+            builder.WithDescription(description);
 
-                new EmbedFieldBuilder{ Name = "Class", Value = classRole, IsInline = true },
-                new EmbedFieldBuilder{ Name = "AlchStone", Value = memberGear.AlchStone, IsInline = true },
-                new EmbedFieldBuilder{ Name = "Axe", Value = memberGear.Axe, IsInline = true },
-            };
+            var fields = CreateInlineFields(new List<DatabaseField> {
+                databaseFields.GetValueOrDefault("AP"),
+                databaseFields.GetValueOrDefault("AAP"),
+                databaseFields.GetValueOrDefault("DP"),
+                databaseFields.GetValueOrDefault("Class"),
+                databaseFields.GetValueOrDefault("AlchStone"),
+                databaseFields.GetValueOrDefault("Axe")
+            });
             builder.Fields = fields;
 
-            if (memberGear.GearLink == "N/A") memberGear.GearLink = "";
-            builder.WithImageUrl(memberGear.GearLink);
+            if (databaseFields.GetValueOrDefault("GearLink").CellValue == "N/A") databaseFields.GetValueOrDefault("GearLink").CellValue = "";
+            builder.WithImageUrl(databaseFields.GetValueOrDefault("GearLink").CellValue);
 
             var footer = new EmbedFooterBuilder();
-            footer.WithText($"Last updated: {memberGear.GearLastUpdated}");
+            footer.WithText($"Last updated: {databaseFields.GetValueOrDefault("Gear last updated").CellValue}");
             builder.WithFooter(footer);
 
             var author = new EmbedAuthorBuilder();
@@ -87,30 +126,47 @@ namespace EithonBot.Discord.Helpers
             return builder.Build();
         }
 
-        public static Embed ActivityProfileEmbed(IUser user, MemberActivity memberActivity)
+        public static Embed ActivityProfileEmbed(IUser user, Dictionary<string, DatabaseField> databaseFields)
         {
             var guildUser = (SocketGuildUser)user;
 
             var builder = new EmbedBuilder();
 
-            builder.WithDescription($"" +
-                $"**Tier**: {memberActivity.Tier}\n" +
-                $"**Guild Activity:** {memberActivity.GA}\n" +
-                $"**Inactivity notice:** {memberActivity.InactivityNotice}");
+            var description = CreateDescription(new List<DatabaseField> {
+                databaseFields.GetValueOrDefault("Tier"),
+                databaseFields.GetValueOrDefault("GA"),
+                databaseFields.GetValueOrDefault("InactivityNotice")
+            });
+            builder.WithDescription(description);
 
-            var gearScoreFields = new List<EmbedFieldBuilder>{
-                new EmbedFieldBuilder{ Name = "GQ", Value = memberActivity.GQ, IsInline = true },
-                new EmbedFieldBuilder{ Name = "NW", Value = memberActivity.NW, IsInline = true },
-                new EmbedFieldBuilder{ Name = "Villa", Value = memberActivity.Villa, IsInline = true },
+            var fields = CreateInlineFields(new List<DatabaseField> {
+                databaseFields.GetValueOrDefault("GQ"),
+                databaseFields.GetValueOrDefault("NW"),
+                databaseFields.GetValueOrDefault("Villa"),
+                databaseFields.GetValueOrDefault("Militia"),
+                databaseFields.GetValueOrDefault("Seamonsters"),
+                databaseFields.GetValueOrDefault("Placeholder")
+            });
+            builder.Fields = fields;
 
-                new EmbedFieldBuilder{ Name = "Militia", Value = memberActivity.Militia, IsInline = true },
-                new EmbedFieldBuilder{ Name = "Seamonsters", Value = memberActivity.Seamonsters, IsInline = true },
-                new EmbedFieldBuilder{ Name = "Placeholder", Value = "N/A", IsInline = true },
-            };
-            builder.Fields = gearScoreFields;
+            //builder.WithDescription($"" +
+            //    $"**Tier**: {memberActivity.Tier}\n" +
+            //    $"**Guild Activity:** {memberActivity.GA}\n" +
+            //    $"**Inactivity notice:** {memberActivity.InactivityNotice}");
+
+            //var gearScoreFields = new List<EmbedFieldBuilder>{
+            //    new EmbedFieldBuilder{ Name = "GQ", Value = memberActivity.GQ, IsInline = true },
+            //    new EmbedFieldBuilder{ Name = "NW", Value = memberActivity.NW, IsInline = true },
+            //    new EmbedFieldBuilder{ Name = "Villa", Value = memberActivity.Villa, IsInline = true },
+
+            //    new EmbedFieldBuilder{ Name = "Militia", Value = memberActivity.Militia, IsInline = true },
+            //    new EmbedFieldBuilder{ Name = "Seamonsters", Value = memberActivity.Seamonsters, IsInline = true },
+            //    new EmbedFieldBuilder{ Name = "Placeholder", Value = "N/A", IsInline = true },
+            //};
+            //builder.Fields = gearScoreFields;
 
             var footer = new EmbedFooterBuilder();
-            footer.WithText($"Last updated: {memberActivity.ActivityLastUpdated}");
+            footer.WithText($"Last updated: {databaseFields.GetValueOrDefault("Activity last updated").CellValue}");
             builder.WithFooter(footer);
 
             var author = new EmbedAuthorBuilder();

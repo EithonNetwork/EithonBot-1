@@ -1,4 +1,5 @@
-﻿using System;
+﻿using EithonBot.Spreadsheet.Models;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -12,13 +13,26 @@ namespace EithonBot.Models
         public DatabaseField FourthEvent { get; internal set; }
         public DatabaseField SignupComment { get; internal set; }
 
-        public MemberSignupData()
+        public MemberSignupData(IList<DatabaseField> fieldList)
         {
-            FirstEvent = new DatabaseField();
-            SecondEvent = new DatabaseField();
-            ThirdEvent = new DatabaseField();
-            FourthEvent = new DatabaseField();
-            SignupComment = new DatabaseField();
+            FirstEvent = fieldList[0];
+            SecondEvent = fieldList[1];
+            ThirdEvent = fieldList[2];
+            FourthEvent = fieldList[3];
+            SignupComment = fieldList[4];
+        }
+
+        public Dictionary<string, DatabaseField> GetFields()
+        {
+            var dictionary = new Dictionary<string, DatabaseField>
+            {
+                { FirstEvent.Column.ColumnHeader, FirstEvent },
+                { SecondEvent.Column.ColumnHeader, SecondEvent },
+                { ThirdEvent.Column.ColumnHeader, ThirdEvent },
+                { FourthEvent.Column.ColumnHeader, FourthEvent },
+                { SignupComment.Column.ColumnHeader, SignupComment }
+            };
+            return dictionary;
         }
     }
 }

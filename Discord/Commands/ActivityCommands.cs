@@ -19,7 +19,7 @@ namespace EithonBot.Discord.Commands
         {
             //TODO: Fix exceptions
             var familyName = MiscHelper.GetFamilyName(Context, Context.User);
-            var memberActivity = SpreadsheetLogic.GetActivity(familyName);
+            var memberActivity = SpreadsheetCommands.GetActivity(familyName);
             if (memberActivity == null) await Context.Channel.SendMessageAsync($"Could not find any activity for {Context.User.Mention}. Officers can add it with the ``!activity add <activity> <@user>`` command");
             else await Context.Channel.SendMessageAsync("", false, EmbedHelper.ActivityProfileEmbed(Context.User, memberActivity));
         }
@@ -30,7 +30,7 @@ namespace EithonBot.Discord.Commands
         {
             //TODO: Fix exceptions
             var familyName = MiscHelper.GetFamilyName(Context, user);
-            var memberActivity = SpreadsheetLogic.GetActivity(familyName);
+            var memberActivity = SpreadsheetCommands.GetActivity(familyName);
             if (memberActivity == null) await Context.Channel.SendMessageAsync($"Could not find any activity for {user.Mention}. Officers can add it with the ``!activity add <activity> <@user>`` command");
             else await Context.Channel.SendMessageAsync("", false, EmbedHelper.ActivityProfileEmbed(user, memberActivity));
         }
@@ -41,9 +41,9 @@ namespace EithonBot.Discord.Commands
         public async Task SetInactivityNotice([Remainder][Summary("Inactivity notice message")] string inactivityNotice)
         {
             var familyName = MiscHelper.GetFamilyName(Context, Context.User);
-            var response = SpreadsheetLogic.UpdateField(familyName, "InactivityNotice", inactivityNotice);
-            SpreadsheetLogic.UpdateField(familyName, "Activity last updated", DateTime.Now.ToString());
-            var memberActivity = SpreadsheetLogic.GetActivity(familyName);
+            var response = SpreadsheetCommands.UpdateField(familyName, "InactivityNotice", inactivityNotice);
+            SpreadsheetCommands.UpdateField(familyName, "Activity last updated", DateTime.Now.ToString());
+            var memberActivity = SpreadsheetCommands.GetActivity(familyName);
             var message = response + " Your activity profile is now as follows:";
             await Context.Channel.SendMessageAsync(message, false, EmbedHelper.ActivityProfileEmbed(Context.User, memberActivity));
         }
@@ -54,9 +54,9 @@ namespace EithonBot.Discord.Commands
         public async Task RemoveInactivityNotice()
         {
             var familyName = MiscHelper.GetFamilyName(Context, Context.User);
-            var response = SpreadsheetLogic.UpdateField(familyName, "InactivityNotice", "");
-            SpreadsheetLogic.UpdateField(familyName, "Activity last updated", DateTime.Now.ToString());
-            var memberActivity = SpreadsheetLogic.GetActivity(familyName);
+            var response = SpreadsheetCommands.UpdateField(familyName, "InactivityNotice", "");
+            SpreadsheetCommands.UpdateField(familyName, "Activity last updated", DateTime.Now.ToString());
+            var memberActivity = SpreadsheetCommands.GetActivity(familyName);
             var message = response + " Your activity profile is now as follows:";
             await Context.Channel.SendMessageAsync(message, false, EmbedHelper.ActivityProfileEmbed(Context.User, memberActivity));
         }
@@ -70,12 +70,12 @@ namespace EithonBot.Discord.Commands
             else
             {
                 string message = $"**{partyName} members**";
-                var partyMembers = SpreadsheetLogic.GetPartyMembers(partyName);
+                var partyMembers = SpreadsheetCommands.GetPartyMembers(partyName);
 
-                for (var i = 0; i < partyMembers.Count;i++)
+                for (var i = 0; i < partyMembers.Count; i++)
                 {
                     var partyMember = partyMembers[i];
-                    message = $"{message}\n{i+1} {partyMember}";
+                    message = $"{message}\n{i + 1} {partyMember}";
                 }
 
                 var oneEmoji = new Emoji("1⃣");
@@ -94,32 +94,30 @@ namespace EithonBot.Discord.Commands
         [Summary("Adds activity to specified activity for user")]
         public async Task AddActivityAsync([Summary("The Activity type")]string activity, [Summary("The user")]IUser user)
         {
+            string message;
+            if (activity == "InactivityNotice")
+            {
+                message = "Currently you can only add your own inactivity through the ``!activity InactivityNotice add <message>`` command";
+                await Context.Channel.SendMessageAsync(message);
+                return;
+            }
             //TODO: Fix exceptions
             if (!PermissionsHelper.UserHasRole(Context.User, "Officer")) await Context.Channel.SendMessageAsync("``Officer`` role is required to execute this command");
-            else {
-                string message;
-                var activityHeaders = DatabaseHelper.GetActivityHeaders(true);
-                if (activityHeaders.Contains(activity))
-                {
-                    if (activity == "InactivityNotice")
-                    {
-                        message = "Currently you can only add your own inactivity through the ``!activity InactivityNotice add <message>`` command";
-                        await Context.Channel.SendMessageAsync(message);
-                    }
-                    else {
-                        var familyName = MiscHelper.GetFamilyName(Context, user);
-                        var response = SpreadsheetLogic.AddActivity(familyName, activity);
-                        SpreadsheetLogic.UpdateField(familyName, "Activity last updated", DateTime.Now.ToString());
-                        var memberActivity = SpreadsheetLogic.GetActivity(familyName);
-                        message = response + " Their activity profile is now as follows:";
-                        await Context.Channel.SendMessageAsync(message, false, EmbedHelper.ActivityProfileEmbed(user, memberActivity));
-                    }
-                }
+            else
+            {
+                var familyName = MiscHelper.GetFamilyName(Context, user);
+                var response = SpreadsheetCommands.AddActivity(familyName, activity);
+
+                if (response == null) await Context.Channel.SendMessageAsync($"Could not update field {activity} for {familyName}. Get Zil to add proper error messages please");
+                //var activityHeadersString = String.Join("\n- ", activityHeaders);
+                //message = $"Could not find \"{activity}\". Please make sure it is one of the following: \n- {activityHeadersString}";
+                //await Context.Channel.SendMessageAsync(message); 
                 else
                 {
-                    var activityHeadersString = String.Join("\n- ", activityHeaders);
-                    message = $"Could not find \"{activity}\". Please make sure it is one of the following: \n- {activityHeadersString}";
-                    await Context.Channel.SendMessageAsync(message);
+                    SpreadsheetCommands.UpdateField(familyName, "Activity last updated", DateTime.Now.ToString());
+                    var memberActivity = SpreadsheetCommands.GetActivity(familyName);
+                    message = response + " Their activity profile is now as follows:";
+                    await Context.Channel.SendMessageAsync(message, false, EmbedHelper.ActivityProfileEmbed(user, memberActivity));
                 }
             }
         }
@@ -130,20 +128,16 @@ namespace EithonBot.Discord.Commands
         {
             //TODO: Fix exceptions
             string message;
-            var activityHeaders = DatabaseHelper.GetActivityHeaders(true);
-            if (activityHeaders.Contains(activity))
-            {
-                var familyName = MiscHelper.GetFamilyName(Context, user);
-                var response = SpreadsheetLogic.RemoveActivity(familyName, activity);
-                var memberActivity = SpreadsheetLogic.GetActivity(familyName);
+            var familyName = MiscHelper.GetFamilyName(Context, user);
+            var response = SpreadsheetCommands.RemoveActivity(familyName, activity);
+            if (response == null) await Context.Channel.SendMessageAsync($"Could not update field {activity} for {familyName}. Get Zil to add proper error messages please");
+            //var activityHeadersString = String.Join("\n- ", activityHeaders);
+            //message = $"Could not find \"{activity}\". Please make sure it is one of the following: \n- {activityHeadersString}";
+            //await Context.Channel.SendMessageAsync(message); else
+            else {
+                var memberActivity = SpreadsheetCommands.GetActivity(familyName);
                 message = response + " Their activity is now as follows:";
                 await Context.Channel.SendMessageAsync(message, false, EmbedHelper.ActivityProfileEmbed(user, memberActivity));
-            }
-            else
-            {
-                var activityHeadersString = String.Join("\n- ", activityHeaders);
-                message = $"Could not find \"{activity}\". Please make sure it is one of the following: \n- {activityHeadersString}";
-                await Context.Channel.SendMessageAsync(message);
             }
         }
     }
