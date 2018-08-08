@@ -6,13 +6,14 @@ using System.Configuration;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Threading;
+using EithonBot.Spreadsheet.Logic;
 
 namespace EithonBot
 {
     class Program
     {
         //TODO: Remove all _spreadsheetLogic from here
-        private SpreadsheetLogic _spreadsheetLogic;
+        private SpreadsheetInstance _spreadsheetInstance;
         private DiscordSocketClient _client;
 
         private CommandService _commands;
@@ -25,7 +26,7 @@ namespace EithonBot
         private Program()
         {
             //TODO: How do I update this logic with the new family names added to spreadsheet?
-            _spreadsheetLogic = SpreadsheetLogic.Instance;
+            _spreadsheetInstance = SpreadsheetInstance.Instance;
             _client = new DiscordSocketClient(new DiscordSocketConfig
             {
                 LogLevel = LogSeverity.Info,
@@ -94,9 +95,9 @@ namespace EithonBot
             var familyName = user.Nickname.Substring(0, user.Nickname.IndexOf(" "));
             var reactionName = reaction.Emote.Name;
 
-            if (reactionName == "✅") { _spreadsheetLogic.Signup(familyName, "Yes", message.Content); }
-            else if (reactionName == "❌") { _spreadsheetLogic.Signup(familyName, "No", message.Content); }
-            else if (reactionName == "❔") { _spreadsheetLogic.Signup(familyName, "Maybe", message.Content); }
+            if (reactionName == "✅") { _spreadsheetInstance.ReactionsParser.Signup(familyName, "Yes", message.Content); }
+            else if (reactionName == "❌") { _spreadsheetInstance.ReactionsParser.Signup(familyName, "No", message.Content); }
+            else if (reactionName == "❔") { _spreadsheetInstance.ReactionsParser.Signup(familyName, "Maybe", message.Content); }
         }
 
         private Task Log(LogMessage msg)

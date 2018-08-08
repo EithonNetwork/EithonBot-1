@@ -4,8 +4,9 @@ using System.Text;
 
 namespace EithonBot.Spreadsheet.Models
 {
-    class DatabaseColumn
+    public class DatabaseColumn
     {
+        //TODO: Currently this is used for the parties sheet as well, is that good?
         public string ColumnLetters { get; private set; }
         public string ColumnHeader { get; private set; }
 

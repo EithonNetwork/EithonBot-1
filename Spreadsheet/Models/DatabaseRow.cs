@@ -4,15 +4,15 @@ using System.Text;
 
 namespace EithonBot.Spreadsheet.Models
 {
-    class DatabaseRow
+    public class DatabaseRow
     {
         internal int RowNumber { get; set; }
-        internal string FamilyName { get; set; }
+        internal DatabaseMember Member { get; set; }
 
-        public DatabaseRow(int rowNumber, string familyName)
+        public DatabaseRow(int rowNumber, DatabaseMember member)
         {
             RowNumber = rowNumber;
-            FamilyName = familyName;
+            Member = member;
         }
     }
 }
