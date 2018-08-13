@@ -6,13 +6,14 @@ using System.Configuration;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Threading;
+using EithonBot.Spreadsheet.Logic;
 
 namespace EithonBot
 {
     class Program
     {
         //TODO: Remove all _spreadsheetLogic from here
-        private SpreadsheetLogic _spreadsheetLogic;
+        private SpreadsheetInstance _spreadsheetInstance;
         private DiscordSocketClient _client;
 
         private CommandService _commands;
@@ -24,7 +25,8 @@ namespace EithonBot
 
         private Program()
         {
-            _spreadsheetLogic = new SpreadsheetLogic("1pLMcQ7Uxha4g3c_poI7YTzZXla7omFwhQRUiCg8IzKI", "Nodewar Signup", "A", 3);
+            //TODO: How do I update this logic with the new family names added to spreadsheet?
+            _spreadsheetInstance = SpreadsheetInstance.Instance;
             _client = new DiscordSocketClient(new DiscordSocketConfig
             {
                 LogLevel = LogSeverity.Info,
@@ -91,10 +93,11 @@ namespace EithonBot
             var guild = (channel as SocketGuildChannel)?.Guild;
             var user = guild.GetUser(reaction.UserId);
             var familyName = user.Nickname.Substring(0, user.Nickname.IndexOf(" "));
+            var reactionName = reaction.Emote.Name;
 
-            if (reaction.Emote.Name == "✅") { _spreadsheetLogic.Signup(familyName, "Yes", message.Content); }
-            else if (reaction.Emote.Name == "❌") { _spreadsheetLogic.Signup(familyName, "No", message.Content); }
-            else if (reaction.Emote.Name == "❔") { _spreadsheetLogic.Signup(familyName, "Maybe", message.Content); }
+            if (reactionName == "✅") { _spreadsheetInstance.ReactionsParser.Signup(familyName, "Yes", message.Content); }
+            else if (reactionName == "❌") { _spreadsheetInstance.ReactionsParser.Signup(familyName, "No", message.Content); }
+            else if (reactionName == "❔") { _spreadsheetInstance.ReactionsParser.Signup(familyName, "Maybe", message.Content); }
         }
 
         private Task Log(LogMessage msg)

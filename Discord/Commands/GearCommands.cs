@@ -5,6 +5,7 @@ using EithonBot.Discord.Helpers;
 using EithonBot.Spreadsheet.NewFolder;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -19,9 +20,9 @@ namespace EithonBot.Discord.Commands
         public async Task GetOwnGear()
         {
             var familyName = MiscHelper.GetFamilyName(Context, Context.User);
-            var memberGear = _spreadsheetLogic.GetGear(familyName);
+            var memberGear = SpreadsheetInstance.CommandsParser.GetGear(familyName);
             if (memberGear == null) await Context.Channel.SendMessageAsync($"Could not find any gear for {Context.User.Mention}. You can add it with the ``!gear <stat> <value>`` command");
-            else await Context.Channel.SendMessageAsync("",false, EmbedHelper.UserGearEmbed(Context.User, memberGear));
+            else await Context.Channel.SendMessageAsync("", false, EmbedHelper.GearProfileEmbed(Context.User, memberGear));
         }
 
         [Command]
@@ -29,93 +30,68 @@ namespace EithonBot.Discord.Commands
         public async Task GetGearOfUser([Summary("The user")]IUser user)
         {
             var familyName = MiscHelper.GetFamilyName(Context, user);
-            var memberGear = _spreadsheetLogic.GetGear(familyName);
+            var memberGear = SpreadsheetInstance.CommandsParser.GetGear(familyName);
             if (memberGear == null) await Context.Channel.SendMessageAsync($"Could not find any gear for {user.Mention}. They can add it with the ``!gear <stat> <value>`` command");
-            else await Context.Channel.SendMessageAsync("", false, EmbedHelper.UserGearEmbed(user, memberGear));
+            else await Context.Channel.SendMessageAsync("", false, EmbedHelper.GearProfileEmbed(user, memberGear));
         }
 
         //TODO: Create a !gear help command (using the summaries already added?)
 
+
+        [Command("GearComment")]
+        [Alias("comment")]
+        [Summary("Sets your gear comment")]
+        [Priority(2)]
+        public async Task SetGearComment([Remainder][Summary("Gear comment message")] string gearComment)
+        {
+            var familyName = MiscHelper.GetFamilyName(Context, Context.User);
+            var response = SpreadsheetInstance.CommandsParser.UpdateSingleField(familyName, "GearComment", gearComment);
+            if (response == null)
+            {
+                await Context.Channel.SendMessageAsync("Could not execute command. Get Zil to add proper error messages please");
+                return;
+            }
+            SpreadsheetInstance.CommandsParser.UpdateSingleField(familyName, "Gear last updated", DateTime.Now.ToString());
+            var message = "Set your gear comment. Check your updated gear profile with with ``!gear``";
+            await Context.Channel.SendMessageAsync(message);
+        }
+
+        [Command("GearComment remove")]
+        [Alias("comment remove")]
+        [Summary("Removes your gear comment")]
+        [Priority(3)]
+        public async Task RemoveGearComment()
+        {
+            var familyName = MiscHelper.GetFamilyName(Context, Context.User);
+            var response = SpreadsheetInstance.CommandsParser.UpdateSingleField(familyName, "GearComment", "");
+            if (response == null)
+            {
+                await Context.Channel.SendMessageAsync("Could not execute command. Get Zil to add proper error messages please");
+                return;
+            }
+            SpreadsheetInstance.CommandsParser.UpdateSingleField(familyName, "Gear last updated", DateTime.Now.ToString());
+            var message = "Removed your gear comment. Check your updated gear profile with with ``!gear``";
+            await Context.Channel.SendMessageAsync(message);
+        }
+
         [Command]
         [Summary("Sets the selected stat to the specified value")]
-        public async Task UpdateStatAsync([Summary("The stat to be changed")] string stat, [Remainder][Summary("The user's level")] string value)
+        [Priority(1)]
+        public async Task UpdateStatAsync([Summary("The stat to be changed")] string stat, [Remainder][Summary("The value of stat")] string value)
         {
             string message;
-            var gearHeaders = DatabaseHelper.GetGearHeaders(true);
-            if (gearHeaders.Contains(stat))
+            var ch = Context.Channel;
+            var familyName = MiscHelper.GetFamilyName(Context, Context.User);
+            var response = SpreadsheetInstance.CommandsParser.UpdateGearStat(familyName, stat, value);
+            //TODO: Improve error messages (What went wrong)
+            if (response == null) await ch.SendMessageAsync($"Could not update field {stat} for {familyName}. Get Zil to add proper error messages please");
+            else
             {
-                var familyName = MiscHelper.GetFamilyName(Context, Context.User);
-                var response = _spreadsheetLogic.updateGearStat(familyName, stat, value);
-                var memberGear = _spreadsheetLogic.GetGear(familyName);
-                message = response + " Your gear profile is now as follows:";
-                await Context.Channel.SendMessageAsync(message, false, EmbedHelper.UserGearEmbed(Context.User, memberGear));
-            }
-            else {
-                var gearHeadersString = String.Join("\n- ", gearHeaders);
-                message = $"Could not find \"{stat}\". Please make sure it is one of the following: \n- {gearHeadersString}";
-                await Context.Channel.SendMessageAsync(message);
+                var lastUpdatedResponse = SpreadsheetInstance.CommandsParser.UpdateSingleField(familyName, "Gear last updated", DateTime.Now.ToString());
+                if (lastUpdatedResponse == null) await ch.SendMessageAsync($"Could not update last updated date for {familyName}. Get Zil to add proper error messages please");
+                message = $"Updated {response.Column.ColumnHeader}. Check your updated gear profile with with ``!gear``";
+                await ch.SendMessageAsync(message);
             }
         }
-
-        /*[Command("GearComment")]
-        [Summary("Sets your gear comment")]
-        public async Task UpdateGearCommentAsync([Remainder] [Summary("The user's gear comment")] string value)
-        {
-            //TODO: Only allow actual alchemy stones
-            var familyName = MiscHelper.GetFamilyName(Context, Context.User);
-            var response = _spreadsheetLogic.updateStat(familyName, "GearComment", value);
-            var gearMessage = response + " Your gear info is now as follows:\n" + _spreadsheetLogic.GetGear(familyName);
-            await Context.Channel.SendMessageAsync(gearMessage);
-        }*/
-
-        /*[Command("AP")]
-        [Summary("Sets your AP")]
-        public async Task UpdateApAsync([Summary("The user's AP")] int value)
-        {
-            var familyName = MiscHelper.GetFamilyName(Context, Context.User);
-            var response = _spreadsheetLogic.updateStat(familyName, "AP", value.ToString());
-            var gearMessage = response + " Your gear info is now as follows:\n" + _spreadsheetLogic.GetGear(familyName);
-            await Context.Channel.SendMessageAsync(gearMessage);
-        }
-
-        [Command("AAP")]
-        [Summary("Sets your Awakening AP")]
-        public async Task UpdateAapAsync([Summary("The user's Awakening AP")] int value)
-        {
-            var familyName = MiscHelper.GetFamilyName(Context, Context.User);
-            var response = _spreadsheetLogic.updateStat(familyName, "AAP", value.ToString());
-            var gearMessage = response + " Your gear info is now as follows:\n" + _spreadsheetLogic.GetGear(familyName);
-            await Context.Channel.SendMessageAsync(gearMessage);
-        }
-
-        [Command("DP")]
-        [Summary("Sets your DP")]
-        public async Task UpdateDpAsync([Summary("The user's DP")] int value)
-        {
-            var familyName = MiscHelper.GetFamilyName(Context, Context.User);
-            var response = _spreadsheetLogic.updateStat(familyName, "DP", value.ToString());
-            var gearMessage = response + " Your gear info is now as follows:\n" + _spreadsheetLogic.GetGear(familyName);
-            await Context.Channel.SendMessageAsync(gearMessage);
-        }
-
-        [Command("AlchStone")]
-        [Summary("Sets your Alchemy stone")]
-        public async Task UpdateAlchStoneAsync([Summary("The user's Alchemy stone")] int value)
-        {
-            var familyName = MiscHelper.GetFamilyName(Context, Context.User);
-            var response = _spreadsheetLogic.updateStat(familyName, "AlchStone", value.ToString());
-            var gearMessage = response + " Your gear info is now as follows:\n" + _spreadsheetLogic.GetGear(familyName);
-            await Context.Channel.SendMessageAsync(gearMessage);
-        }
-
-        [Command("Axe")]
-        [Summary("Sets your Alchemy stone")]
-        public async Task UpdateAxeAsync([Summary("The user's axe")] string value)
-        {
-            var familyName = MiscHelper.GetFamilyName(Context, Context.User);
-            var response = _spreadsheetLogic.updateStat(familyName, "Axe", value);
-            var gearMessage = response + " Your gear info is now as follows:\n" + _spreadsheetLogic.GetGear(familyName);
-            await Context.Channel.SendMessageAsync(gearMessage);
-        }*/
     }
 }

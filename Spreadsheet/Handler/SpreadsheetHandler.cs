@@ -1,14 +1,25 @@
-﻿using Google.Apis.Sheets.v4;
+﻿using EithonBot.Spreadsheet.Models;
+using Google.Apis.Sheets.v4;
 using Google.Apis.Sheets.v4.Data;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace EithonBot.Spreadsheet.Handler
 {
     class SpreadsheetHandler
     {
-        internal static IList<IList<object>> getValuesFromRange(SheetsService service, string spreadsheetId, string range)
+        internal static void NewMember(SheetsService service, string spreadsheetId, DatabaseSheet sheet, IList<IList<object>> values)
+        {
+            SpreadsheetsResource.ValuesResource.AppendRequest request =
+                                service.Spreadsheets.Values.Append(new ValueRange() { Values = values }, spreadsheetId, $"{sheet.Name}!{sheet.DatabaseColumns.FirstOrDefault().Value.ColumnLetters}{sheet.ColumnHeadersRow+2}:{sheet.DatabaseColumns.LastOrDefault().Value.ColumnLetters}{sheet.ColumnHeadersRow + 2}");
+            request.InsertDataOption = SpreadsheetsResource.ValuesResource.AppendRequest.InsertDataOptionEnum.INSERTROWS;
+            request.ValueInputOption = SpreadsheetsResource.ValuesResource.AppendRequest.ValueInputOptionEnum.RAW;
+            var response = request.Execute();
+        }
+
+        internal static IList<IList<object>> GetValuesFromRange(SheetsService service, string spreadsheetId, string range)
         {
             var request = service.Spreadsheets.Values.Get(spreadsheetId, range);
             var response = request.Execute();
@@ -52,8 +63,8 @@ namespace EithonBot.Spreadsheet.Handler
             SpreadsheetsResource.BatchUpdateRequest Deletion = new SpreadsheetsResource.BatchUpdateRequest(service, DeleteRequest, spreadsheetId);
             Deletion.Execute();
         }
-
-
+        
+        //TODO: change signature? (switch place on value and cellreference)
         internal static void UpdateCell(SheetsService service, string spreadsheetId, string value, string cellReference)
         {
             var updateValue = new List<object>() { value };
@@ -67,6 +78,5 @@ namespace EithonBot.Spreadsheet.Handler
             updateRequest.ValueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.USERENTERED;
             var result = updateRequest.Execute();
         }
-
     }
 }

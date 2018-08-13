@@ -14,7 +14,6 @@ namespace EithonBot
         [Summary("Add a member to the google sheet database")]
         public async Task AddMember([Summary("The user")]IUser user)
         {
-            //TODO: Add check so you can't add duplicates
             var familyName = MiscHelper.GetFamilyName(Context, user);
             var characterName = MiscHelper.GetCharacterName(Context, user);
             var hasRole = PermissionsHelper.UserHasRole((SocketGuildUser)Context.User, "Officer");
@@ -24,21 +23,25 @@ namespace EithonBot
                 await Context.Channel.SendMessageAsync("Officer role required to execute this command");
                 return;
             }
-            if (_spreadsheetLogic.MemberExists(familyName))
+            else
             {
-                await Context.Channel.SendMessageAsync("Member is already added");
-                return;
+                var member = SpreadsheetInstance.CommandsParser.AddMember(familyName, characterName);
+                if (member == null)
+                {
+                    await Context.Channel.SendMessageAsync("Could not add member (Already exists?). Get Zil to add proper error messages please");
+                    return;
+                }
+                else
+                {
+                    await Context.Channel.SendMessageAsync("Added member to spreadsheet");
+                }
             }
-
-            _spreadsheetLogic.AddMember(familyName, characterName);
-            await Context.Channel.SendMessageAsync("Added member to spreadsheet");
         }
 
         [Command("remove")]
         [Summary("Remove a member from the google sheet database")]
         public async Task RemoveMember([Summary("The user")]IUser user)
         {
-            //TODO: Add check so you can't add duplicates
             var familyName = MiscHelper.GetFamilyName(Context, user);
             var characterName = MiscHelper.GetCharacterName(Context, user);
             var hasRole = PermissionsHelper.UserHasRole((SocketGuildUser)Context.User, "Officer");
@@ -48,14 +51,19 @@ namespace EithonBot
                 await Context.Channel.SendMessageAsync("Officer role required to execute this command");
                 return;
             }
-            if (!_spreadsheetLogic.MemberExists(familyName))
+            else
             {
-                await Context.Channel.SendMessageAsync("Member does not exist on the spreadsheet");
-                return;
+                var succeded = SpreadsheetInstance.CommandsParser.RemoveMember(familyName);
+                if (!succeded)
+                {
+                    await Context.Channel.SendMessageAsync("Could not remove member (Not added?). Get Zil to add proper error messages please");
+                    return;
+                }
+                else
+                {
+                    await Context.Channel.SendMessageAsync("Removed member from spreadsheet");
+                }
             }
-
-            _spreadsheetLogic.RemoveMember(familyName);
-            await Context.Channel.SendMessageAsync("Removed member from spreadsheet");
         }
     }
 
@@ -66,7 +74,7 @@ namespace EithonBot
         [Summary("Resets signups")]
         public async Task ResetSignups()
         {
-            _spreadsheetLogic.ResetSignups();
+            SpreadsheetInstance.CommandsParser.ResetSignups();
             await Context.Channel.SendMessageAsync("Reset Signups");
         }
 
@@ -74,25 +82,25 @@ namespace EithonBot
         [Summary("Resets activity")]
         public async Task ResetActivity()
         {
-            _spreadsheetLogic.ResetActivity();
+            SpreadsheetInstance.CommandsParser.ResetActivity();
             await Context.Channel.SendMessageAsync("Reset Activity");
         }
     }
 
-    public class ReplyModule : ModuleBase<SocketCommandContext>
-    {
-        // ~say hello world -> hello world
-        [Command("say")]
-        [Summary("Echoes a message.")]
-        public Task SayAsync([Remainder] [Summary("The text to echo")] string echo)
-            => ReplyAsync(echo);
+    //public class ReplyModule : ModuleBase<SocketCommandContext>
+    //{
+    //    // ~say hello world -> hello world
+    //    [Command("say")]
+    //    [Summary("Echoes a message.")]
+    //    public Task SayAsync([Remainder] [Summary("The text to echo")] string echo)
+    //        => ReplyAsync(echo);
 
-        // ~say hello world -> hello world
-        [Command("invitelink")]
-        [Summary("Provides the invite link.")]
-        public Task GetLink()
-            => ReplyAsync("https://discordapp.com/oauth2/authorize?client_id=460865617424154624&scope=bot");
-    }
+    //    // ~say hello world -> hello world
+    //    [Command("invitelink")]
+    //    [Summary("Provides the invite link.")]
+    //    public Task GetLink()
+    //        => ReplyAsync("https://discordapp.com/oauth2/authorize?client_id=460865617424154624&scope=bot");
+    //}
 
     public class SignupModule : SpreadsheetModuleBase
     {
@@ -108,10 +116,10 @@ namespace EithonBot
 
             var infoMessage = await Context.Channel.SendMessageAsync("**Please react to the following messages to indicate your participation in the coming guild activities:**");
 
-            var eventMessage = await MessageHelper.SendMessageWithReactionsAsync(Context.Message, "Event. Sunday event", false, null, greenCheckEmoji, xEmoji, greyQuestionEmoji);
-            var mondayMessage = await MessageHelper.SendMessageWithReactionsAsync(Context.Message, "1. Monday nodewar", false, null, greenCheckEmoji, xEmoji, greyQuestionEmoji);
-            var wednesdayMessage = await MessageHelper.SendMessageWithReactionsAsync(Context.Message, "2. Wednesday nodewar", false, null, greenCheckEmoji, xEmoji, greyQuestionEmoji);
-            var fridayMessage = await MessageHelper.SendMessageWithReactionsAsync(Context.Message, "3. Friday nodewar", false, null, greenCheckEmoji, xEmoji, greyQuestionEmoji);
+            var eventMessage = await MessageHelper.SendMessageWithReactionsAsync(Context.Channel, "Event. Sunday event", false, null, greenCheckEmoji, xEmoji, greyQuestionEmoji);
+            var mondayMessage = await MessageHelper.SendMessageWithReactionsAsync(Context.Channel, "1. Monday nodewar", false, null, greenCheckEmoji, xEmoji, greyQuestionEmoji);
+            var wednesdayMessage = await MessageHelper.SendMessageWithReactionsAsync(Context.Channel, "2. Wednesday nodewar", false, null, greenCheckEmoji, xEmoji, greyQuestionEmoji);
+            var fridayMessage = await MessageHelper.SendMessageWithReactionsAsync(Context.Channel, "3. Friday nodewar", false, null, greenCheckEmoji, xEmoji, greyQuestionEmoji);
         }
     }
 }
