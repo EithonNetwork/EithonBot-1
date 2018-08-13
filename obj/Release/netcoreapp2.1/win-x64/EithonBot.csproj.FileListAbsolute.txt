@@ -1,0 +1,16 @@
+C:\Git\Discord\EithonBot\EithonBot\bin\Release\netcoreapp2.1\win-x64\client_secret.json
+C:\Git\Discord\EithonBot\EithonBot\bin\Release\netcoreapp2.1\win-x64\EithonBot.dll.config
+C:\Git\Discord\EithonBot\EithonBot\bin\Release\netcoreapp2.1\win-x64\EithonBot.deps.json
+C:\Git\Discord\EithonBot\EithonBot\bin\Release\netcoreapp2.1\win-x64\EithonBot.runtimeconfig.json
+C:\Git\Discord\EithonBot\EithonBot\bin\Release\netcoreapp2.1\win-x64\EithonBot.runtimeconfig.dev.json
+C:\Git\Discord\EithonBot\EithonBot\bin\Release\netcoreapp2.1\win-x64\EithonBot.dll
+C:\Git\Discord\EithonBot\EithonBot\bin\Release\netcoreapp2.1\win-x64\EithonBot.pdb
+C:\Git\Discord\EithonBot\EithonBot\obj\Release\netcoreapp2.1\win-x64\EithonBot.csproj.CoreCompileInputs.cache
+C:\Git\Discord\EithonBot\EithonBot\obj\Release\netcoreapp2.1\win-x64\EithonBot.AssemblyInfoInputs.cache
+C:\Git\Discord\EithonBot\EithonBot\obj\Release\netcoreapp2.1\win-x64\EithonBot.AssemblyInfo.cs
+C:\Git\Discord\EithonBot\EithonBot\obj\Release\netcoreapp2.1\win-x64\EithonBot.dll
+C:\Git\Discord\EithonBot\EithonBot\obj\Release\netcoreapp2.1\win-x64\EithonBot.pdb
+C:\Git\Discord\EithonBot\EithonBot\bin\Release\netcoreapp2.1\win-x64\hostpolicy.dll
+C:\Git\Discord\EithonBot\EithonBot\bin\Release\netcoreapp2.1\win-x64\hostfxr.dll
+C:\Git\Discord\EithonBot\EithonBot\bin\Release\netcoreapp2.1\win-x64\EithonBot.exe
+C:\Git\Discord\EithonBot\EithonBot\obj\Release\netcoreapp2.1\win-x64\EithonBot.csprojAssemblyReference.cache
