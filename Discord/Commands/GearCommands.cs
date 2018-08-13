@@ -38,44 +38,41 @@ namespace EithonBot.Discord.Commands
         //TODO: Create a !gear help command (using the summaries already added?)
 
 
-        [Command("comment")]
+        [Command("GearComment")]
+        [Alias("comment")]
         [Summary("Sets your gear comment")]
         [Priority(2)]
         public async Task SetGearComment([Remainder][Summary("Gear comment message")] string gearComment)
         {
             var familyName = MiscHelper.GetFamilyName(Context, Context.User);
-            var response = SpreadsheetInstance.CommandsParser.UpdateField(familyName, "GearComment", gearComment);
-            SpreadsheetInstance.CommandsParser.UpdateField(familyName, "Activity last updated", DateTime.Now.ToString());
-            var message = response + " Check your updated gear profile with with ``!gear``";
-            await Context.Channel.SendMessageAsync(message);
-        }
-
-        [Command("comment remove")]
-        [Summary("Removes your gear comment")]
-        [Priority(3)]
-        public async Task RemoveGearComment()
-        {
-            //TODO: Make sure you can only update intended columns
-            var familyName = MiscHelper.GetFamilyName(Context, Context.User);
-            var response = SpreadsheetInstance.CommandsParser.UpdateField(familyName, "GearComment", "");
-            SpreadsheetInstance.CommandsParser.UpdateField(familyName, "Gear last updated", DateTime.Now.ToString());
-            var message = response + " Check your updated gear profile with with ``!gear``";
+            var response = SpreadsheetInstance.CommandsParser.UpdateSingleField(familyName, "GearComment", gearComment);
+            if (response == null)
+            {
+                await Context.Channel.SendMessageAsync("Could not execute command. Get Zil to add proper error messages please");
+                return;
+            }
+            SpreadsheetInstance.CommandsParser.UpdateSingleField(familyName, "Gear last updated", DateTime.Now.ToString());
+            var message = "Set your gear comment. Check your updated gear profile with with ``!gear``";
             await Context.Channel.SendMessageAsync(message);
         }
 
         [Command("GearComment remove")]
-        [Summary("Removes your GearComment")]
+        [Alias("comment remove")]
+        [Summary("Removes your gear comment")]
         [Priority(3)]
-        public async Task RemoveGearComment2()
+        public async Task RemoveGearComment()
         {
-            //TODO: Make sure you can only update intended columns
             var familyName = MiscHelper.GetFamilyName(Context, Context.User);
-            var response = SpreadsheetInstance.CommandsParser.UpdateField(familyName, "GearComment", "");
-            SpreadsheetInstance.CommandsParser.UpdateField(familyName, "Gear last updated", DateTime.Now.ToString());
-            var message = response + " Check your updated gear profile with with ``!gear``";
+            var response = SpreadsheetInstance.CommandsParser.UpdateSingleField(familyName, "GearComment", "");
+            if (response == null)
+            {
+                await Context.Channel.SendMessageAsync("Could not execute command. Get Zil to add proper error messages please");
+                return;
+            }
+            SpreadsheetInstance.CommandsParser.UpdateSingleField(familyName, "Gear last updated", DateTime.Now.ToString());
+            var message = "Removed your gear comment. Check your updated gear profile with with ``!gear``";
             await Context.Channel.SendMessageAsync(message);
         }
-
 
         [Command]
         [Summary("Sets the selected stat to the specified value")]
@@ -85,12 +82,12 @@ namespace EithonBot.Discord.Commands
             string message;
             var ch = Context.Channel;
             var familyName = MiscHelper.GetFamilyName(Context, Context.User);
-            var response = SpreadsheetInstance.CommandsParser.UpdateField(familyName, stat, value);
+            var response = SpreadsheetInstance.CommandsParser.UpdateGearStat(familyName, stat, value);
             //TODO: Improve error messages (What went wrong)
             if (response == null) await ch.SendMessageAsync($"Could not update field {stat} for {familyName}. Get Zil to add proper error messages please");
             else
             {
-                var lastUpdatedResponse = SpreadsheetInstance.CommandsParser.UpdateField(familyName, "Gear last updated", DateTime.Now.ToString());
+                var lastUpdatedResponse = SpreadsheetInstance.CommandsParser.UpdateSingleField(familyName, "Gear last updated", DateTime.Now.ToString());
                 if (lastUpdatedResponse == null) await ch.SendMessageAsync($"Could not update last updated date for {familyName}. Get Zil to add proper error messages please");
                 message = $"Updated {response.Column.ColumnHeader}. Check your updated gear profile with with ``!gear``";
                 await ch.SendMessageAsync(message);

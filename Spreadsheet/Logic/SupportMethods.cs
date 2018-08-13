@@ -28,11 +28,24 @@ namespace EithonBot.Spreadsheet.Logic
             for (var i = 0; i < headers.Count(); i++)
             {
                 var columnLetters = DatabaseHelper.GetColumnLetters()[i];
-                var columnName = headers[i];
-                var column = new DatabaseColumn(columnLetters, columnName);
-                columns.TryAdd(columnName, column);
+                var columnHeader = headers[i];
+                var column = DatabaseHelper.GetColumn(columnLetters, columnHeader);
+                columns.TryAdd(columnHeader, column);
             }
             return columns;
+        }
+
+        internal Dictionary<string, DatabaseColumn> GetColumnsOfSection(Dictionary<string, DatabaseColumn> databaseColumns, DatabaseColumn.ColumnSectionEnum columnSection)
+        {
+            var sectionColumns = new Dictionary<string, DatabaseColumn>();
+            foreach (var databaseColumn in databaseColumns)
+            {
+                if (databaseColumn.Value.ColumnSection == columnSection)
+                {
+                    sectionColumns.TryAdd(databaseColumn.Key, databaseColumn.Value);
+                }
+            }
+            return sectionColumns;
         }
 
         internal Dictionary<string, DatabaseRow> FetchAllDatabaseRowsFromSpreadsheet(string familyNamesColumn)
@@ -93,7 +106,7 @@ namespace EithonBot.Spreadsheet.Logic
 
         internal bool MemberExists(string familyName)
         {
-            var row = _spreadsheet.GetDatabaseRows().GetValueOrDefault(familyName);
+            var row = _spreadsheet.DatabaseSheet.DatabaseRows.GetValueOrDefault(familyName);
             if (row == null) return false;
             return true;
         }
@@ -109,7 +122,7 @@ namespace EithonBot.Spreadsheet.Logic
             return databaseFields;
         }
 
-        internal DatabaseField PopulateFieldWithValues(SheetsService service, string spreadsheetId, DatabaseField databaseField)
+        internal DatabaseField PopulateFieldWithTheirSpreadsheetValue(SheetsService service, string spreadsheetId, DatabaseField databaseField)
         {
             var values = SpreadsheetHandler.GetValuesFromRange(service, spreadsheetId, databaseField.CellReference);
             if (values == null) return null;
@@ -119,7 +132,7 @@ namespace EithonBot.Spreadsheet.Logic
             return databaseField;
         }
 
-        internal Dictionary<string, DatabaseField> PopulateConsecutiveFieldsWithValues(SheetsService service, string spreadsheetId, Dictionary<string, DatabaseField> fields)
+        internal Dictionary<string, DatabaseField> PopulateConsecutiveFieldsWithTheirSpreadsheetValues(SheetsService service, string spreadsheetId, Dictionary<string, DatabaseField> fields)
         {
             var sheet = fields.FirstOrDefault().Value.Sheet;
             var startColumn = fields.FirstOrDefault().Value.Column;
@@ -130,7 +143,7 @@ namespace EithonBot.Spreadsheet.Logic
             if (values == null) return null;
             var flattenedValues = FlattenSpreadsheetValues(values);
 
-            for (var i = 0; i < fields.Count(); i++)
+            for (var i = 0; i < flattenedValues.Count(); i++)
             {
                 fields.Values.ElementAt(i).CellValue = flattenedValues[i];
             }
@@ -155,7 +168,7 @@ namespace EithonBot.Spreadsheet.Logic
                 if (columnValuesFlattened[0].ToString() == value)
                 {
                     rowNumber = i + 1;
-                    row = new DatabaseRow(rowNumber, _spreadsheet.GetDatabaseRows().FirstOrDefault(x => x.Value.RowNumber == rowNumber).Value.Member);
+                    row = new DatabaseRow(rowNumber, _spreadsheet.DatabaseSheet.DatabaseRows.FirstOrDefault(x => x.Value.RowNumber == rowNumber).Value.Member);
                     break;
                 }
             }
@@ -191,6 +204,11 @@ namespace EithonBot.Spreadsheet.Logic
                 var column = i.Value;
                 SpreadsheetHandler.ClearRange(_service, _spreadsheet.Id, $"{_spreadsheet.DatabaseSheet.Name}!{column.ColumnLetters}{_spreadsheet.DatabaseSheet.ColumnHeadersRow + 2}:{column.ColumnLetters}");
             }
+        }
+
+        internal void UpdateField(DatabaseField field)
+        {
+            SpreadsheetHandler.UpdateCell(_service, _spreadsheet.Id, field.CellValue, field.CellReference);
         }
     }
 }

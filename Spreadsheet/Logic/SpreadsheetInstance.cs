@@ -82,13 +82,13 @@ namespace EithonBot.Spreadsheet.Logic
         {
             var databaseSheet = Spreadsheet.DatabaseSheet;
             databaseSheet.ColumnHeadersRow = databaseHeadersRow;
-            databaseSheet.DatabaseColumns =  SupportMethods.GetColumns(databaseSheet, databaseHeadersRow);
             databaseSheet.FamilyNamesColumn = databaseFamilyNamesColumn;
             databaseSheet.DatabaseRows = SupportMethods.FetchAllDatabaseRowsFromSpreadsheet(databaseFamilyNamesColumn);
+            databaseSheet.DatabaseColumns = SupportMethods.GetColumns(databaseSheet, databaseHeadersRow);
 
             var partiesSheet = Spreadsheet.PartiesSheet;
             partiesSheet.ColumnHeadersRow = partiesHeadersRow;
-            partiesSheet.DatabaseColumns = SupportMethods.GetColumns(partiesSheet, partiesHeadersRow);
+            partiesSheet.DatabaseColumns = SupportMethods.GetColumns(partiesSheet, databaseHeadersRow);
         }
     }
 }

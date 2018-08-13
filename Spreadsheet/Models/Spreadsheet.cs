@@ -15,20 +15,5 @@ namespace EithonBot.Spreadsheet.Models
         {
             Id = spreadsheetId;
         }
-
-        public Dictionary<string, DatabaseRow> GetDatabaseRows()
-        {
-            return DatabaseSheet.DatabaseRows;
-        }
-
-        public Dictionary<string, DatabaseColumn> GetDatabaseColumns()
-        {
-            return DatabaseSheet.DatabaseColumns;
-        }
-
-        public Dictionary<string, DatabaseColumn> GetPartiesColumns()
-        {
-            return PartiesSheet.DatabaseColumns;
-        }
     }
 }

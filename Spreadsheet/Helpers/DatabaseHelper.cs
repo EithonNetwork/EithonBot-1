@@ -17,93 +17,153 @@ namespace EithonBot.Spreadsheet.NewFolder
             return columnLetters;
         }
 
-        internal static DatabaseColumn GetClassColumn(Dictionary<string, DatabaseColumn> databaseColumns)
+        internal static DatabaseColumn GetColumn(string columnLetters, string columnHeader)
         {
-            var header = "Class";
-            var classColumn = databaseColumns.GetValueOrDefault(header);
-            return classColumn;
+            bool editableByCommand = false;
+            DatabaseColumn.ColumnSectionEnum columnSection = DatabaseColumn.ColumnSectionEnum.UnidentifiedSection;
+            
+            //TODO: figure out a better way of doing this
+            var columns = GetIdentifierColumnsInfo();
+            if (columns.ContainsKey(columnHeader))
+            {
+                editableByCommand = columns.GetValueOrDefault(columnHeader);
+                columnSection = DatabaseColumn.ColumnSectionEnum.Identifiers;
+            }
+            else
+            {
+                columns = GetMemberInfoColumnsInfo();
+                if (columns.ContainsKey(columnHeader))
+                {
+                    editableByCommand = columns.GetValueOrDefault(columnHeader);
+                    columnSection = DatabaseColumn.ColumnSectionEnum.MemberInfo;
+                }
+                else
+                {
+                    columns = GetRolesColumnsInfo();
+                    if (columns.ContainsKey(columnHeader))
+                    {
+                        editableByCommand = columns.GetValueOrDefault(columnHeader);
+                        columnSection = DatabaseColumn.ColumnSectionEnum.Roles;
+                    }
+                    else
+                    {
+                        columns = GetSignupColumnsInfo();
+                        if (columns.ContainsKey(columnHeader))
+                        {
+                            editableByCommand = columns.GetValueOrDefault(columnHeader);
+                            columnSection = DatabaseColumn.ColumnSectionEnum.Signup;
+                        }
+                        else
+                        {
+                            columns = GetActivityColumnsInfo();
+                            if (columns.ContainsKey(columnHeader))
+                            {
+                                editableByCommand = columns.GetValueOrDefault(columnHeader);
+                                columnSection = DatabaseColumn.ColumnSectionEnum.Activity;
+                            }
+                            else
+                            {
+                                columns = GetGearColumnsInfo();
+                                if (columns.ContainsKey(columnHeader))
+                                {
+                                    editableByCommand = columns.GetValueOrDefault(columnHeader);
+                                    columnSection = DatabaseColumn.ColumnSectionEnum.Gear;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            var column = new DatabaseColumn(columnLetters, columnHeader, editableByCommand, columnSection);
+            return column;
         }
 
-        internal static Dictionary<string, DatabaseColumn> GetGearColumns(Dictionary<string, DatabaseColumn> databaseColumns, bool getOnlyCommandEditableHeaders = false)
+        private static Dictionary<string, bool> GetIdentifierColumnsInfo()
         {
-            var headers = new List<string>
+            //string = ColumnHeader, bool = EditableByCommand
+            var headers = new Dictionary<string, bool>
             {
-                "Renown",
-                "LVL",
-                "AP",
-                "AAP",
-                "DP",
-                "AlchStone",
-                "Axe",
-                "GearComment",
-                "GearLink",
-                "Gear last updated"
+                {"FamilyName", false},
+                {"CharacterName", false},
             };
-
-            if (getOnlyCommandEditableHeaders)
-            {
-                headers.Remove("Renown");
-                headers.Remove("Gear last updated");
-            }
-
-            var colums = new Dictionary<string, DatabaseColumn>();
-            foreach (var header in headers) colums.TryAdd(header, databaseColumns.GetValueOrDefault(header));
-
-            return colums;
+            return headers;
         }
 
-        internal static Dictionary<string, DatabaseColumn> GetActivityColumns(Dictionary<string, DatabaseColumn> databaseColumns, bool getOnlyCommandEditableHeaders = false)
+        private static Dictionary<string, bool> GetMemberInfoColumnsInfo()
         {
-            var headers = new List<string>
+            //string = ColumnHeader, bool = EditableByCommand
+            var headers = new Dictionary<string, bool>
             {
-                "Tier",
-                "GA",
-                "GQ",
-                "NW",
-                "Villa",
-                "Militia",
-                "Seamonsters",
-                "InactivityNotice",
-                "Activity last updated"
+                {"Class", false},
+                {"DiscordUsername", false},
             };
-
-            if (getOnlyCommandEditableHeaders)
-            {
-                headers.Remove("Tier");
-                headers.Remove("GA");
-                headers.Remove("Activity last updated");
-            }
-
-            var colums = new Dictionary<string, DatabaseColumn>();
-            foreach (var header in headers) colums.TryAdd(header, databaseColumns.GetValueOrDefault(header));
-
-            return colums;
+            return headers;
         }
 
-        internal static Dictionary<string, DatabaseColumn> GetSignupColumns(Dictionary<string, DatabaseColumn> databaseColumns)
+        private static Dictionary<string, bool> GetRolesColumnsInfo()
         {
-            var headers = new List<string>
+            //string = ColumnHeader, bool = EditableByCommand
+            var headers = new Dictionary<string, bool>
             {
-                "Sunday",
-                "Monday",
-                "Tuesday",
-                "Wednesday",
-                "Thursday",
-                "Friday",
-                "Saturday",
-                "SignupComment"
+                {"Officer", false},
+                {"PartyLeader", false},
             };
+            return headers;
+        }
 
-            List<string> currentHeaders = new List<string>();
-            foreach (var item in headers)
+        internal static Dictionary<string, bool> GetGearColumnsInfo()
+        {
+            //string = ColumnHeader, bool = EditableByCommand
+            var headers = new Dictionary<string, bool>
             {
-                if (databaseColumns.ContainsKey(item)) currentHeaders.Add(item);
-            }
+                {"Renown", false},
+                {"TerritoryFame", true},
+                {"LVL", true},
+                {"AP", true},
+                {"AAP", true},
+                {"DP", true},
+                {"AlchStone", true},
+                {"Axe", true},
+                {"GearComment", true},
+                {"GearLink", true},
+                {"Gear last updated", true}
+            };
+            return headers;
+        }
 
-            var colums = new Dictionary<string, DatabaseColumn>();
-            foreach (var header in currentHeaders) colums.Add(header, databaseColumns.GetValueOrDefault(header));
+        internal static Dictionary<string, bool> GetActivityColumnsInfo()
+        {
+            //string = ColumnHeader, bool = EditableByCommand
+            var headers = new Dictionary<string, bool>
+            {
+                {"Tier", true},
+                {"GA", true},
+                {"GQ", true},
+                {"NW", true},
+                {"Villa", true},
+                {"Militia", true},
+                {"Seamonsters", true},
+                {"InactivityNotice", true},
+                {"Activity last updated", true}
+            };
+            return headers;
+        }
 
-            return colums;
+        internal static Dictionary<string, bool> GetSignupColumnsInfo()
+        {
+            //string = ColumnHeader, bool = EditableByCommand
+            var headers = new Dictionary<string, bool>
+            {
+                {"Sunday", true},
+                {"Monday", true},
+                {"Tuesday", true},
+                {"Wednesday", true},
+                {"Thursday", true},
+                {"Friday", true},
+                {"Saturday", true},
+                {"SignupComment", true}
+            };
+            return headers;
         }
     }
 }

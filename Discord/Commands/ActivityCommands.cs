@@ -36,29 +36,41 @@ namespace EithonBot.Discord.Commands
         }
 
         [Command("InactivityNotice")]
+        [Alias("comment")]
         [Summary("Sets your inactivity notice")]
         [Priority(1)]
         public async Task SetInactivityNotice([Remainder][Summary("Inactivity notice message")] string inactivityNotice)
         {
             var familyName = MiscHelper.GetFamilyName(Context, Context.User);
-            var response = SpreadsheetInstance.CommandsParser.UpdateField(familyName, "InactivityNotice", inactivityNotice);
-            SpreadsheetInstance.CommandsParser.UpdateField(familyName, "Activity last updated", DateTime.Now.ToString());
-            var message = "Updated your InactivityNotice. Check your updated activity profile with !activity";
+            var response = SpreadsheetInstance.CommandsParser.UpdateSingleField(familyName, "InactivityNotice", inactivityNotice);
+            if (response == null)
+            {
+                await Context.Channel.SendMessageAsync("Could not execute command. Get Zil to add proper error messages please");
+                return;
+            }
+            SpreadsheetInstance.CommandsParser.UpdateSingleField(familyName, "Activity last updated", DateTime.Now.ToString());
+            var message = "Set your InactivityNotice. Check your updated activity profile with !activity";
             await Context.Channel.SendMessageAsync(message);
         }
 
         //Prioritized
         [Command("InactivityNotice remove")]
+        [Alias("comment remove")]
         [Summary("Removes your inactivity notice")]
         [Priority(2)]
         public async Task RemoveInactivityNotice()
         {
             var familyName = MiscHelper.GetFamilyName(Context, Context.User);
-            var response = SpreadsheetInstance.CommandsParser.UpdateField(familyName, "InactivityNotice", "");
-            SpreadsheetInstance.CommandsParser.UpdateField(familyName, "Activity last updated", DateTime.Now.ToString());
+            var response = SpreadsheetInstance.CommandsParser.UpdateSingleField(familyName, "InactivityNotice", "");
+            if (response == null)
+            {
+                await Context.Channel.SendMessageAsync("Could not execute command. Get Zil to add proper error messages please");
+                return;
+            }
+            SpreadsheetInstance.CommandsParser.UpdateSingleField(familyName, "Activity last updated", DateTime.Now.ToString());
             var memberActivity = SpreadsheetInstance.CommandsParser.GetActivity(familyName);
-            var message = response + " Your activity profile is now as follows:";
-            await Context.Channel.SendMessageAsync(message, false, EmbedHelper.ActivityProfileEmbed(Context.User, memberActivity));
+            var message = "Removed your inactivity notice. Check your updated activity profile activity with '!activity";
+            await Context.Channel.SendMessageAsync(message);
         }
 
         [Command("nodewarparty")]
@@ -115,8 +127,8 @@ namespace EithonBot.Discord.Commands
                 else
                 {
                     var memberActivity = SpreadsheetInstance.CommandsParser.GetActivity(familyName);
-                    message = response + " Their activity profile is now as follows:";
-                    await Context.Channel.SendMessageAsync(message, false, EmbedHelper.ActivityProfileEmbed(user, memberActivity));
+                    message = $"Added one {activity} activity for {user.Mention}. Check their updated activity profile with '!activity {user.Mention}'";
+                    await Context.Channel.SendMessageAsync(message);
                 }
             }
         }
@@ -136,8 +148,8 @@ namespace EithonBot.Discord.Commands
             else
             {
                 var memberActivity = SpreadsheetInstance.CommandsParser.GetActivity(familyName);
-                message = response + " Their activity is now as follows:";
-                await Context.Channel.SendMessageAsync(message, false, EmbedHelper.ActivityProfileEmbed(user, memberActivity));
+                message = $"Removed one {activity} activity for {user.Mention}. Check their updated activity profile with '!activity {user.Mention}'";
+                await Context.Channel.SendMessageAsync(message);
             }
         }
     }
