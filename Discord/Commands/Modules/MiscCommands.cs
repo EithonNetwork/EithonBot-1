@@ -4,6 +4,8 @@ using Discord.WebSocket;
 using EithonBot.Discord.Commands;
 using EithonBot.Discord.Helpers;
 using System.Threading.Tasks;
+using Discord.Addons.Interactive;
+using System;
 
 namespace EithonBot
 {
@@ -120,6 +122,47 @@ namespace EithonBot
             var mondayMessage = await MessageHelper.SendMessageWithReactionsAsync(Context.Channel, "1. Monday nodewar", false, null, greenCheckEmoji, xEmoji, greyQuestionEmoji);
             var wednesdayMessage = await MessageHelper.SendMessageWithReactionsAsync(Context.Channel, "2. Wednesday nodewar", false, null, greenCheckEmoji, xEmoji, greyQuestionEmoji);
             var fridayMessage = await MessageHelper.SendMessageWithReactionsAsync(Context.Channel, "3. Friday nodewar", false, null, greenCheckEmoji, xEmoji, greyQuestionEmoji);
+        }
+
+        // InlineReactionReplyAsync will send a message and adds reactions on it.
+        // Once an user adds a reaction, the callback is fired.
+        // If callback was successfull next callback is not handled
+        // Unsuccessful callback is a reaction that did not have a callback.
+        [Command("reaction")]
+        public async Task Test_ReactionReply()
+        {
+            await InlineReactionReplyAsync(new ReactionCallbackData("text", null, false, false)
+                .WithCallback(new Emoji("👍"), (c, r) => c.Channel.SendMessageAsync($"{r.User.Value.Mention} replied with 👍"))
+                .WithCallback(new Emoji("👎"), (c, r) => c.Channel.SendMessageAsync($"{r.User.Value.Mention} replied with 👎"))
+            );
+        }
+        [Command("embedreaction")]
+        public async Task Test_EmedReactionReply(bool expiresafteruse, bool singleuseperuser, bool sourceuser)
+        {
+            var oneEmoji = new Emoji("1⃣");
+            var twoEmoji = new Emoji("2⃣");
+            var threeEmoji = new Emoji("3⃣");
+            var fourEmoji = new Emoji("4⃣");
+            var fiveEmoji = new Emoji("5⃣");
+
+            var embed = new EmbedBuilder()
+                .WithTitle("Below are the members of Left 1. React with their number to give activity")
+                .WithDescription($"" +
+                $"{oneEmoji.Name} - Ziryen \n" +
+                $"{twoEmoji.Name} - Emiyah \n" +
+                $"{threeEmoji.Name} - Marketeer \n" +
+                $"{fourEmoji.Name} - Aftertwelve \n" +
+                $"{fiveEmoji.Name} - Holmquist \n")
+                .WithFooter("You have 30 seconds before this message times out.")
+                .Build();
+
+            await InlineReactionReplyAsync(new ReactionCallbackData(null, embed, expiresafteruse, singleuseperuser, TimeSpan.FromSeconds(30), (c) => c.Channel.SendMessageAsync($"{c.User.Mention} Nodewar party activity message timed out."))
+                .WithCallback(oneEmoji, (c, r) => c.Channel.SendMessageAsync($"{r.User.Value.Mention} Here you go :beer:"))
+                .WithCallback(twoEmoji, (c, r) => c.Channel.SendMessageAsync($"{r.User.Value.Mention} Here you go :tropical_drink:"))
+                .WithCallback(threeEmoji, (c, r) => c.Channel.SendMessageAsync($"{r.User.Value.Mention} Here you go :tropical_drink:"))
+                .WithCallback(fourEmoji, (c, r) => c.Channel.SendMessageAsync($"{r.User.Value.Mention} Here you go :tropical_drink:"))
+                .WithCallback(fiveEmoji, (c, r) => c.Channel.SendMessageAsync($"{r.User.Value.Mention} Here you go :tropical_drink:")), sourceuser
+            );
         }
     }
 }

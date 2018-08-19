@@ -128,7 +128,7 @@ namespace EithonBot
             var column = _spreadsheet.PartiesSheet.DatabaseColumns.GetValueOrDefault(partyName);
             if (column == null) return null;
 
-            var partyMembers = SpreadsheetHandler.GetValuesFromRange(_service, _spreadsheet.Id, $"{_spreadsheet.PartiesSheet}!{column.ColumnLetters}{_spreadsheet.PartiesSheet.ColumnHeadersRow + 1}:{column.ColumnLetters}");
+            var partyMembers = SpreadsheetHandler.GetValuesFromRange(_service, _spreadsheet.Id, $"{_spreadsheet.PartiesSheet.Name}!{column.ColumnLetters}{_spreadsheet.PartiesSheet.ColumnHeadersRow + 1}:{column.ColumnLetters}");
 
             var result = partyMembers.SelectMany(i => i).ToList();
 

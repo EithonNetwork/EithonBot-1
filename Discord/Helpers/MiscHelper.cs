@@ -21,7 +21,21 @@ namespace EithonBot.Discord.Helpers
             catch
             {
                 context.Channel.SendMessageAsync("Could not parse family name of command user. Please make sure that the nickname of the user is in the correct format: **<FamilyName> (CharacterName)**");
-                throw new ApplicationException();
+                return null;
+            }
+        }
+
+        public static SocketGuildUser GetDiscordUserFromFamilyName(SocketCommandContext context, string familyName)
+        {
+            var matchingUsers = context.Guild.Users.Where(user => user.Nickname != null && user.Nickname.Contains(familyName));
+            try
+            {
+                var user = matchingUsers.FirstOrDefault();
+                return user;
+            }
+            catch
+            {
+                return null;
             }
         }
 

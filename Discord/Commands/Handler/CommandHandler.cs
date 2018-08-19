@@ -1,5 +1,6 @@
 ﻿using Discord.Commands;
 using Discord.WebSocket;
+using System;
 using System.Reflection;
 using System.Threading.Tasks;
 
@@ -9,11 +10,13 @@ namespace EithonBot
     {
         private readonly DiscordSocketClient _client;
         private readonly CommandService _commands;
+        private readonly IServiceProvider _services;
 
-        public CommandHandler(DiscordSocketClient client, CommandService commands)
+        public CommandHandler(DiscordSocketClient client, CommandService commands, IServiceProvider services)
         {
             _commands = commands;
             _client = client;
+            _services = services;
         }
 
         public async Task InstallCommandsAsync()
@@ -57,7 +60,7 @@ namespace EithonBot
             var result = await _commands.ExecuteAsync(
                 context: context,
                 argPos: argPos,
-                services: null);
+                services: _services);
 
             // Optionally, we may inform the user if the command fails
             // to be executed; however, this may not always be desired,

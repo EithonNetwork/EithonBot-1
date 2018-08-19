@@ -7,6 +7,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Threading;
 using EithonBot.Spreadsheet.Logic;
+using Microsoft.Extensions.DependencyInjection;
+using Discord.Addons.Interactive;
 
 namespace EithonBot
 {
@@ -14,11 +16,11 @@ namespace EithonBot
     {
         //TODO: Remove all _spreadsheetLogic from here
         private SpreadsheetInstance _spreadsheetInstance;
-        private DiscordSocketClient _client;
+        private static DiscordSocketClient _client;
 
         private CommandService _commands;
         private CommandHandler _commandHandler;
-        //private readonly IServiceProvider _services;
+        private readonly IServiceProvider _services;
 
         public static void Main(string[] args)
             => new Program().MainAsync().GetAwaiter().GetResult();
@@ -53,26 +55,27 @@ namespace EithonBot
             _commands.Log += Log;
 
             // Setup your DI container.
-            //_services = ConfigureServices();
+            _services = ConfigureServices();
         }
 
-        /*private static IServiceProvider ConfigureServices()
+        private static IServiceProvider ConfigureServices()
         {
             var map = new ServiceCollection()
                 // Repeat this for all the service classes
                 // and other dependencies that your commands might need.
-                .AddSingleton(new SomeServiceClass());
+                .AddSingleton(_client)
+                .AddSingleton<InteractiveService>();
 
             // When all your required services are in the collection, build the container.
             // Tip: There's an overload taking in a 'validateScopes' bool to make sure
             // you haven't made any mistakes in your dependency graph.
             return map.BuildServiceProvider();
-        }*/
+        }
         
         public async Task MainAsync()
         {
             // Centralize the logic for commands into a separate method.
-            _commandHandler = new CommandHandler(_client, _commands);
+            _commandHandler = new CommandHandler(_client, _commands, _services);
             await _commandHandler.InstallCommandsAsync();
 
             // Login and connect.
@@ -85,7 +88,7 @@ namespace EithonBot
             await Task.Delay(Timeout.Infinite);
         }
         //-------------------------------------
-
+        
         //TODO: Can I move this into the command class?
         private async Task ReactionAdded(Cacheable<IUserMessage, ulong> arg1, ISocketMessageChannel channel, SocketReaction reaction)
         {

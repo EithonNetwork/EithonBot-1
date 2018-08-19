@@ -1,6 +1,8 @@
 ﻿using Discord;
+using Discord.Addons.Interactive;
 using Discord.Commands;
 using Discord.WebSocket;
+using EithonBot.Discord.Commands.Helpers;
 using EithonBot.Discord.Helpers;
 using EithonBot.Spreadsheet.NewFolder;
 using System;
@@ -81,24 +83,55 @@ namespace EithonBot.Discord.Commands
             if (!PermissionsHelper.UserHasRole(Context.User, "Party Leader")) await Context.Channel.SendMessageAsync("``Party Leader`` role is required to execute this command");
             else
             {
-                string message = $"**{partyName} members**";
-                var partyMembers = SpreadsheetInstance.CommandsParser.GetPartyMembers(partyName);
+                var errorEmoji = new Emoji("🛑");
+                var emojiList = new List<Emoji>
+                {
+                    new Emoji("1⃣"),
+                    new Emoji("2⃣"),
+                    new Emoji("3⃣"),
+                    new Emoji("4⃣"),
+                    new Emoji("5⃣")
+                };
 
+                var partyMembers = SpreadsheetInstance.CommandsParser.GetPartyMembers(partyName);
+                var discordUsers = new List<IUser>();
+                var names = new List<string>();
                 for (var i = 0; i < partyMembers.Count; i++)
                 {
-                    var partyMember = partyMembers[i];
-                    message = $"{message}\n{i + 1} {partyMember}";
+                    var familyName = partyMembers[i].ToString();
+                    var discordUser = MiscHelper.GetDiscordUserFromFamilyName(Context, familyName);
+                    discordUsers.Add(discordUser);
+
+                    if (discordUser != null)
+                    {
+                        names.Add($"**{discordUser.Nickname}**");
+                    }
+                    else
+                    {
+                        emojiList[i] = errorEmoji;
+                        names.Add($"Error: No user with family name ``{familyName}`` could be found on the server.");
+                    }
+                    /* names.Add((discordUser != null) ? discordUser.Nickname : familyName + " wasn't found"); */
                 }
 
-                var oneEmoji = new Emoji("1⃣");
-                var twoEmoji = new Emoji("2⃣");
-                var threeEmoji = new Emoji("3⃣");
-                var fourEmoji = new Emoji("4⃣");
-                var fiveEmoji = new Emoji("5⃣");
+                var embed = new EmbedBuilder()
+                    .WithTitle("Party members of Left 1. React with their number to give activity")
+                    .WithDescription($"" +
+                    $"{emojiList[0]} - {names[0]} \n" +
+                    $"{emojiList[1]} - {names[1]} \n" +
+                    $"{emojiList[2]} - {names[2]} \n" +
+                    $"{emojiList[3]} - {names[3]} \n" +
+                    $"{emojiList[4]} - {names[4]} \n")
+                    .WithFooter("You have 30 seconds before this message times out.")
+                    .Build();
 
-                message = $"{message}\n*React with their number to give activity*";
-                await MessageHelper.SendMessageWithReactionsAsync(Context.Channel, message, false, null, oneEmoji, twoEmoji, threeEmoji, fourEmoji, fiveEmoji);
-                //TODO: Do something with this
+                await InlineReactionReplyAsync(new ReactionCallbackData(null, embed, false, false, TimeSpan.FromSeconds(30), (c) => c.Channel.SendMessageAsync($"{c.User.Mention} Nodewar party activity message timed out."))
+                    .WithCallback(emojiList[0], (c, r) => CommandHelper.GiveActivityToMember(SpreadsheetInstance, Context, discordUsers[0], "NW"))
+                    .WithCallback(emojiList[1], (c, r) => CommandHelper.GiveActivityToMember(SpreadsheetInstance, Context, discordUsers[1], "NW"))
+                    .WithCallback(emojiList[2], (c, r) => CommandHelper.GiveActivityToMember(SpreadsheetInstance, Context, discordUsers[2], "NW"))
+                    .WithCallback(emojiList[3], (c, r) => CommandHelper.GiveActivityToMember(SpreadsheetInstance, Context, discordUsers[3], "NW"))
+                    .WithCallback(emojiList[4], (c, r) => CommandHelper.GiveActivityToMember(SpreadsheetInstance, Context, discordUsers[4], "NW")), true
+                );
             }
         }
 
