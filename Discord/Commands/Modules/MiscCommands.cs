@@ -18,7 +18,8 @@ namespace EithonBot
         {
             var familyName = MiscHelper.GetFamilyName(Context, user);
             var characterName = MiscHelper.GetCharacterName(Context, user);
-            var hasRole = PermissionsHelper.UserHasRole((SocketGuildUser)Context.User, "Officer");
+            //TODO: Fix this shit
+            var hasRole = true;//PermissionsHelper.UserHasRole((SocketGuildUser)Context.User, "Officer");
 
             if (!hasRole)
             {
@@ -46,7 +47,8 @@ namespace EithonBot
         {
             var familyName = MiscHelper.GetFamilyName(Context, user);
             var characterName = MiscHelper.GetCharacterName(Context, user);
-            var hasRole = PermissionsHelper.UserHasRole((SocketGuildUser)Context.User, "Officer");
+            //TODO: Fix this shit
+            var hasRole = true; // PermissionsHelper.UserHasRole((SocketGuildUser)Context.User, "Officer");
 
             if (!hasRole)
             {

@@ -27,7 +27,7 @@ namespace EithonBot.Spreadsheet.Logic
         //TODO: How do I make this proper async
         internal async void Signup(string familyName, string value, string signupMessage)
         {
-            var row = _spreadsheet.DatabaseSheet.DatabaseRows.GetValueOrDefault(familyName);
+            var row = _spreadsheet.BDOMembersSheet.DatabaseRows.GetValueOrDefault(familyName);
             if (row == null) return;
 
             string columnHeader = null;
@@ -39,10 +39,10 @@ namespace EithonBot.Spreadsheet.Logic
             } while (weekDay.Day != DayEnum.Sunday);
             if (columnHeader == null) return;
 
-            var column = _spreadsheet.DatabaseSheet.DatabaseColumns.GetValueOrDefault(columnHeader);
+            var column = _spreadsheet.BDOMembersSheet.DatabaseColumns.GetValueOrDefault(columnHeader);
             if (column == null) return;
 
-            SpreadsheetHandler.UpdateCell(_service, _spreadsheet.Id, value, $"{_spreadsheet.DatabaseSheet.Name}!{column.ColumnLetters}{row.RowNumber}");
+            SpreadsheetHandler.UpdateCell(_service, _spreadsheet.Id, value, $"{_spreadsheet.BDOMembersSheet.Name}!{column.ColumnLetters}{row.RowNumber}");
         }
     }
 }

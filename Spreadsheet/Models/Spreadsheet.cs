@@ -8,8 +8,8 @@ namespace EithonBot.Spreadsheet.Models
     {
         internal string Name { get; set; }
         internal string Id { get; private set; }
-        internal DatabaseSheet DatabaseSheet { get; set; }
-        internal DatabaseSheet PartiesSheet { get; set; }
+        internal DatabaseSheet BDOMembersSheet { get; set; }
+        internal DatabaseSheet BDOPartiesSheet { get; set; }
 
         public Spreadsheet(string spreadsheetId)
         {

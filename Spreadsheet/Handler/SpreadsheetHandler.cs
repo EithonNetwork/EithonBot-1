@@ -13,7 +13,7 @@ namespace EithonBot.Spreadsheet.Handler
         internal static void NewMember(SheetsService service, string spreadsheetId, DatabaseSheet sheet, IList<IList<object>> values)
         {
             SpreadsheetsResource.ValuesResource.AppendRequest request =
-                                service.Spreadsheets.Values.Append(new ValueRange() { Values = values }, spreadsheetId, $"{sheet.Name}!{sheet.DatabaseColumns.FirstOrDefault().Value.ColumnLetters}{sheet.ColumnHeadersRow+2}:{sheet.DatabaseColumns.LastOrDefault().Value.ColumnLetters}{sheet.ColumnHeadersRow + 2}");
+                                service.Spreadsheets.Values.Append(new ValueRange() { Values = values }, spreadsheetId, $"{sheet.Name}!{sheet.DatabaseColumns.FirstOrDefault().Value.ColumnLetters}{sheet.ColumnIdentifiersRow+2}:{sheet.DatabaseColumns.LastOrDefault().Value.ColumnLetters}{sheet.ColumnIdentifiersRow + 2}");
             request.InsertDataOption = SpreadsheetsResource.ValuesResource.AppendRequest.InsertDataOptionEnum.INSERTROWS;
             request.ValueInputOption = SpreadsheetsResource.ValuesResource.AppendRequest.ValueInputOptionEnum.RAW;
             var response = request.Execute();

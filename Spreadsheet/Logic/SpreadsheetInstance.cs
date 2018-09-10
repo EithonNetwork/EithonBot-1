@@ -67,8 +67,8 @@ namespace EithonBot.Spreadsheet.Logic
 
             Spreadsheet = new Models.Spreadsheet(spreadsheetId)
             {
-                DatabaseSheet = new DatabaseSheet(databaseSheet),
-                PartiesSheet = new DatabaseSheet(partiesSheet)
+                BDOMembersSheet = new DatabaseSheet(databaseSheet),
+                BDOPartiesSheet = new DatabaseSheet(partiesSheet)
             };
 
             SupportMethods = new SupportMethods(Service, Spreadsheet);
@@ -80,14 +80,14 @@ namespace EithonBot.Spreadsheet.Logic
 
         private void PopulateSpreadsheetModel(string databaseFamilyNamesColumn, int databaseHeadersRow, int partiesHeadersRow)
         {
-            var databaseSheet = Spreadsheet.DatabaseSheet;
-            databaseSheet.ColumnHeadersRow = databaseHeadersRow;
-            databaseSheet.FamilyNamesColumn = databaseFamilyNamesColumn;
+            var databaseSheet = Spreadsheet.BDOMembersSheet;
+            databaseSheet.ColumnIdentifiersRow = databaseHeadersRow;
+            databaseSheet.RowIdentifiersColumn = databaseFamilyNamesColumn;
             databaseSheet.DatabaseRows = SupportMethods.FetchAllDatabaseRowsFromSpreadsheet(databaseFamilyNamesColumn);
             databaseSheet.DatabaseColumns = SupportMethods.GetColumns(databaseSheet, databaseHeadersRow);
 
-            var partiesSheet = Spreadsheet.PartiesSheet;
-            partiesSheet.ColumnHeadersRow = partiesHeadersRow;
+            var partiesSheet = Spreadsheet.BDOPartiesSheet;
+            partiesSheet.ColumnIdentifiersRow = partiesHeadersRow;
             partiesSheet.DatabaseColumns = SupportMethods.GetColumns(partiesSheet, databaseHeadersRow);
         }
     }

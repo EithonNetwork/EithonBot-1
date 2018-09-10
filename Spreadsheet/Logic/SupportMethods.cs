@@ -50,8 +50,8 @@ namespace EithonBot.Spreadsheet.Logic
 
         internal Dictionary<string, DatabaseRow> FetchAllDatabaseRowsFromSpreadsheet(string familyNamesColumn)
         {
-            var familyNames = SpreadsheetHandler.GetValuesFromRange(_service, _spreadsheet.Id, $"{_spreadsheet.DatabaseSheet.Name}!{familyNamesColumn}:{familyNamesColumn}");
-            var characterNames = SpreadsheetHandler.GetValuesFromRange(_service, _spreadsheet.Id, $"{_spreadsheet.DatabaseSheet.Name}!{familyNamesColumn}:{familyNamesColumn}");
+            var familyNames = SpreadsheetHandler.GetValuesFromRange(_service, _spreadsheet.Id, $"{_spreadsheet.BDOMembersSheet.Name}!{familyNamesColumn}:{familyNamesColumn}");
+            var characterNames = SpreadsheetHandler.GetValuesFromRange(_service, _spreadsheet.Id, $"{_spreadsheet.BDOMembersSheet.Name}!{familyNamesColumn}:{familyNamesColumn}");
             if (familyNames.Count == 0) return null;
 
             var rowDictionary = new Dictionary<string, DatabaseRow>();
@@ -68,7 +68,7 @@ namespace EithonBot.Spreadsheet.Logic
                 catch { continue; }
             }
 
-            _spreadsheet.DatabaseSheet.DatabaseRows = rowDictionary;
+            _spreadsheet.BDOMembersSheet.DatabaseRows = rowDictionary;
             return rowDictionary;
         }
 
@@ -106,7 +106,7 @@ namespace EithonBot.Spreadsheet.Logic
 
         internal bool MemberExists(string familyName)
         {
-            var row = _spreadsheet.DatabaseSheet.DatabaseRows.GetValueOrDefault(familyName);
+            var row = _spreadsheet.BDOMembersSheet.DatabaseRows.GetValueOrDefault(familyName);
             if (row == null) return false;
             return true;
         }
@@ -168,7 +168,7 @@ namespace EithonBot.Spreadsheet.Logic
                 if (columnValuesFlattened[0].ToString() == value)
                 {
                     rowNumber = i + 1;
-                    row = new DatabaseRow(rowNumber, _spreadsheet.DatabaseSheet.DatabaseRows.FirstOrDefault(x => x.Value.RowNumber == rowNumber).Value.Member);
+                    row = new DatabaseRow(rowNumber, _spreadsheet.BDOMembersSheet.DatabaseRows.FirstOrDefault(x => x.Value.RowNumber == rowNumber).Value.Member);
                     break;
                 }
             }
@@ -202,7 +202,7 @@ namespace EithonBot.Spreadsheet.Logic
             foreach (var i in columnsToReset)
             {
                 var column = i.Value;
-                SpreadsheetHandler.ClearRange(_service, _spreadsheet.Id, $"{_spreadsheet.DatabaseSheet.Name}!{column.ColumnLetters}{_spreadsheet.DatabaseSheet.ColumnHeadersRow + 2}:{column.ColumnLetters}");
+                SpreadsheetHandler.ClearRange(_service, _spreadsheet.Id, $"{_spreadsheet.BDOMembersSheet.Name}!{column.ColumnLetters}{_spreadsheet.BDOMembersSheet.ColumnIdentifiersRow + 2}:{column.ColumnLetters}");
             }
         }
 

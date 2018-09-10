@@ -42,34 +42,34 @@ namespace EithonBot
             var member = new DatabaseMember(familyName, characterName);
             var values = _supportMethods.ParseToConsecutiveSpreadsheetValues(new List<string> { familyName, characterName });
 
-            SpreadsheetHandler.NewMember(_service, _spreadsheet.Id, _spreadsheet.DatabaseSheet, values);
+            SpreadsheetHandler.NewMember(_service, _spreadsheet.Id, _spreadsheet.BDOMembersSheet, values);
             //Update rows
-            _supportMethods.FetchAllDatabaseRowsFromSpreadsheet(_spreadsheet.DatabaseSheet.FamilyNamesColumn);
+            _supportMethods.FetchAllDatabaseRowsFromSpreadsheet(_spreadsheet.BDOMembersSheet.RowIdentifiersColumn);
             return member;
         }
 
         internal bool RemoveMember(string familyName)
         {
-            var row = _spreadsheet.DatabaseSheet.DatabaseRows.GetValueOrDefault(familyName);
+            var row = _spreadsheet.BDOMembersSheet.DatabaseRows.GetValueOrDefault(familyName);
             if (row == null) return false;
 
             SpreadsheetHandler.DeleteRow(_service, _spreadsheet.Id, row.RowNumber);
 
             //Update rows
-            _supportMethods.FetchAllDatabaseRowsFromSpreadsheet(_spreadsheet.DatabaseSheet.FamilyNamesColumn);
+            _supportMethods.FetchAllDatabaseRowsFromSpreadsheet(_spreadsheet.BDOMembersSheet.RowIdentifiersColumn);
             return true;
         }
 
         internal DatabaseField UpdateGearStat(string familyName, string columnHeader, string value)
         {
-            var row = _spreadsheet.DatabaseSheet.DatabaseRows.GetValueOrDefault(familyName);
+            var row = _spreadsheet.BDOMembersSheet.DatabaseRows.GetValueOrDefault(familyName);
             if (row == null) return null;
 
-            var column = _spreadsheet.DatabaseSheet.DatabaseColumns.GetValueOrDefault(columnHeader);
+            var column = _spreadsheet.BDOMembersSheet.DatabaseColumns.GetValueOrDefault(columnHeader);
             if (column == null) return null;
             if (column.ColumnSection != DatabaseColumn.ColumnSectionEnum.Gear || !column.EditableByCommand) return null;
 
-            var field = new DatabaseField(_spreadsheet.DatabaseSheet, column, row);
+            var field = new DatabaseField(_spreadsheet.BDOMembersSheet, column, row);
             field.CellValue = value;
             
             _supportMethods.UpdateField(field);
@@ -78,7 +78,7 @@ namespace EithonBot
 
         internal string ResetSignups()
         {
-            var columsToReset = _supportMethods.GetColumnsOfSection(_spreadsheet.DatabaseSheet.DatabaseColumns, DatabaseColumn.ColumnSectionEnum.Signup);
+            var columsToReset = _supportMethods.GetColumnsOfSection(_spreadsheet.BDOMembersSheet.DatabaseColumns, DatabaseColumn.ColumnSectionEnum.Signup);
             _supportMethods.ClearColumns(columsToReset);
 
             return "Reset nodewar signups. Use !nodewarsignup in the announcement channel to create a new signup interface for next week.";
@@ -86,12 +86,12 @@ namespace EithonBot
 
         internal MemberSignupData GetSignupData(string familyName)
         {
-            var row = _spreadsheet.DatabaseSheet.DatabaseRows.GetValueOrDefault(familyName);
+            var row = _spreadsheet.BDOMembersSheet.DatabaseRows.GetValueOrDefault(familyName);
             if (row == null) return null;
 
-            var columns = _supportMethods.GetColumnsOfSection(_spreadsheet.DatabaseSheet.DatabaseColumns, DatabaseColumn.ColumnSectionEnum.Signup);
+            var columns = _supportMethods.GetColumnsOfSection(_spreadsheet.BDOMembersSheet.DatabaseColumns, DatabaseColumn.ColumnSectionEnum.Signup);
 
-            var fields = _supportMethods.GetDatabaseFieldsFromConsecutiveColumns(_spreadsheet.DatabaseSheet, columns, row);
+            var fields = _supportMethods.GetDatabaseFieldsFromConsecutiveColumns(_spreadsheet.BDOMembersSheet, columns, row);
             if (fields == null) return null;
 
             var fieldsWithValues = _supportMethods.PopulateConsecutiveFieldsWithTheirSpreadsheetValues(_service, _spreadsheet.Id, fields);
@@ -103,16 +103,16 @@ namespace EithonBot
 
         internal Dictionary<string, DatabaseField> GetGear(string familyName)
         {
-            var row = _spreadsheet.DatabaseSheet.DatabaseRows.GetValueOrDefault(familyName);
+            var row = _spreadsheet.BDOMembersSheet.DatabaseRows.GetValueOrDefault(familyName);
             if (row == null) return null;
 
-            var gearColumns = _supportMethods.GetColumnsOfSection(_spreadsheet.DatabaseSheet.DatabaseColumns, DatabaseColumn.ColumnSectionEnum.Gear);
+            var gearColumns = _supportMethods.GetColumnsOfSection(_spreadsheet.BDOMembersSheet.DatabaseColumns, DatabaseColumn.ColumnSectionEnum.Gear);
             //TODO: How do I do this without adding hard coded class header
-            var classColumn = _spreadsheet.DatabaseSheet.DatabaseColumns.GetValueOrDefault("Class");
+            var classColumn = _spreadsheet.BDOMembersSheet.DatabaseColumns.GetValueOrDefault("Class");
 
-            var fields = _supportMethods.GetDatabaseFieldsFromConsecutiveColumns(_spreadsheet.DatabaseSheet, gearColumns, row);
+            var fields = _supportMethods.GetDatabaseFieldsFromConsecutiveColumns(_spreadsheet.BDOMembersSheet, gearColumns, row);
             if (fields == null) return null;
-            var classField = new DatabaseField(_spreadsheet.DatabaseSheet, classColumn, row);
+            var classField = new DatabaseField(_spreadsheet.BDOMembersSheet, classColumn, row);
             if (classField == null) return null;
 
             _supportMethods.PopulateConsecutiveFieldsWithTheirSpreadsheetValues(_service, _spreadsheet.Id, fields);
@@ -125,10 +125,10 @@ namespace EithonBot
 
         internal List<object> GetPartyMembers(string partyName)
         {
-            var column = _spreadsheet.PartiesSheet.DatabaseColumns.GetValueOrDefault(partyName);
+            var column = _spreadsheet.BDOPartiesSheet.DatabaseColumns.GetValueOrDefault(partyName);
             if (column == null) return null;
 
-            var partyMembers = SpreadsheetHandler.GetValuesFromRange(_service, _spreadsheet.Id, $"{_spreadsheet.PartiesSheet.Name}!{column.ColumnLetters}{_spreadsheet.PartiesSheet.ColumnHeadersRow + 1}:{column.ColumnLetters}");
+            var partyMembers = SpreadsheetHandler.GetValuesFromRange(_service, _spreadsheet.Id, $"{_spreadsheet.BDOPartiesSheet.Name}!{column.ColumnLetters}{_spreadsheet.BDOPartiesSheet.ColumnIdentifiersRow + 1}:{column.ColumnLetters}");
 
             var result = partyMembers.SelectMany(i => i).ToList();
 
@@ -137,7 +137,7 @@ namespace EithonBot
 
         internal string ResetActivity()
         {
-            var columsToReset = _supportMethods.GetColumnsOfSection(_spreadsheet.DatabaseSheet.DatabaseColumns, DatabaseColumn.ColumnSectionEnum.Activity);
+            var columsToReset = _supportMethods.GetColumnsOfSection(_spreadsheet.BDOMembersSheet.DatabaseColumns, DatabaseColumn.ColumnSectionEnum.Activity);
             _supportMethods.ClearColumns(columsToReset);
 
             return "Reset activity signups.";
@@ -146,16 +146,16 @@ namespace EithonBot
         //TODO: Better system for "string addOrRemove"
         internal DatabaseField ChangeActivity(string familyName, string columnHeader, string addOrRemove)
         {
-            var row = _spreadsheet.DatabaseSheet.DatabaseRows.GetValueOrDefault(familyName);
+            var row = _spreadsheet.BDOMembersSheet.DatabaseRows.GetValueOrDefault(familyName);
             if (row == null) return null;
 
             var column = _supportMethods
-                .GetColumnsOfSection(_spreadsheet.DatabaseSheet.DatabaseColumns, DatabaseColumn.ColumnSectionEnum.Activity)
+                .GetColumnsOfSection(_spreadsheet.BDOMembersSheet.DatabaseColumns, DatabaseColumn.ColumnSectionEnum.Activity)
                 .GetValueOrDefault(columnHeader);
             if (column == null) return null;
-            var cellOldValue = SpreadsheetHandler.GetValuesFromRange(_service, _spreadsheet.Id, $"{_spreadsheet.DatabaseSheet.Name}!{column.ColumnLetters}{row.RowNumber}");
+            var cellOldValue = SpreadsheetHandler.GetValuesFromRange(_service, _spreadsheet.Id, $"{_spreadsheet.BDOMembersSheet.Name}!{column.ColumnLetters}{row.RowNumber}");
 
-            var field = new DatabaseField(_spreadsheet.DatabaseSheet, column, row);
+            var field = new DatabaseField(_spreadsheet.BDOMembersSheet, column, row);
             int newValue;
             if (addOrRemove == "add")
             {
@@ -174,23 +174,23 @@ namespace EithonBot
                 else field.CellValue = newValue.ToString();
             }
 
-            SpreadsheetHandler.UpdateCell(_service, _spreadsheet.Id, field.CellValue, $"{_spreadsheet.DatabaseSheet.Name}!{column.ColumnLetters}{row.RowNumber}");
+            SpreadsheetHandler.UpdateCell(_service, _spreadsheet.Id, field.CellValue, $"{_spreadsheet.BDOMembersSheet.Name}!{column.ColumnLetters}{row.RowNumber}");
             
-            column = _spreadsheet.DatabaseSheet.DatabaseColumns.GetValueOrDefault("Activity last updated");
+            column = _spreadsheet.BDOMembersSheet.DatabaseColumns.GetValueOrDefault("Activity last updated");
             if (column == null) return null;
-            SpreadsheetHandler.UpdateCell(_service, _spreadsheet.Id, DateTime.Now.ToString(), $"{_spreadsheet.DatabaseSheet.Name}!{column.ColumnLetters}{row.RowNumber}");
+            SpreadsheetHandler.UpdateCell(_service, _spreadsheet.Id, DateTime.Now.ToString(), $"{_spreadsheet.BDOMembersSheet.Name}!{column.ColumnLetters}{row.RowNumber}");
 
             return field;
         }
 
         internal Dictionary<string, DatabaseField> GetActivity(string familyName)
         {
-            var row = _spreadsheet.DatabaseSheet.DatabaseRows.GetValueOrDefault(familyName);
+            var row = _spreadsheet.BDOMembersSheet.DatabaseRows.GetValueOrDefault(familyName);
             if (row == null) return null;
 
-            var columns = _supportMethods.GetColumnsOfSection(_spreadsheet.DatabaseSheet.DatabaseColumns, DatabaseColumn.ColumnSectionEnum.Activity);
+            var columns = _supportMethods.GetColumnsOfSection(_spreadsheet.BDOMembersSheet.DatabaseColumns, DatabaseColumn.ColumnSectionEnum.Activity);
 
-            var fields = _supportMethods.GetDatabaseFieldsFromConsecutiveColumns(_spreadsheet.DatabaseSheet, columns, row);
+            var fields = _supportMethods.GetDatabaseFieldsFromConsecutiveColumns(_spreadsheet.BDOMembersSheet, columns, row);
             if (fields == null) return null;
 
             _supportMethods.PopulateConsecutiveFieldsWithTheirSpreadsheetValues(_service, _spreadsheet.Id, fields);
@@ -200,13 +200,13 @@ namespace EithonBot
 
         internal DatabaseField UpdateSingleField(string familyName, string columnHeader, string value)
         {
-            var row = _spreadsheet.DatabaseSheet.DatabaseRows.GetValueOrDefault(familyName);
+            var row = _spreadsheet.BDOMembersSheet.DatabaseRows.GetValueOrDefault(familyName);
             if (row == null) return null;
 
-            var column = _spreadsheet.DatabaseSheet.DatabaseColumns.GetValueOrDefault(columnHeader);
+            var column = _spreadsheet.BDOMembersSheet.DatabaseColumns.GetValueOrDefault(columnHeader);
             if (column == null) return null;
 
-            var field = new DatabaseField(_spreadsheet.DatabaseSheet, column, row);
+            var field = new DatabaseField(_spreadsheet.BDOMembersSheet, column, row);
             field.CellValue = value;
 
             _supportMethods.UpdateField(field);

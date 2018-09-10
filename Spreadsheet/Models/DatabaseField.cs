@@ -6,13 +6,13 @@ namespace EithonBot.Spreadsheet.Models
 {
     class DatabaseField
     {
-        public DatabaseSheet Sheet { get; private set; }
+        public BDODatabaseSheet Sheet { get; private set; }
         public DatabaseColumn Column { get; private set; }
         public DatabaseRow Row { get; private set; }
         public string CellReference { get; private set; }
         public string CellValue { get; set; }
 
-        public DatabaseField(DatabaseSheet sheet, DatabaseColumn column, DatabaseRow row)
+        public DatabaseField(BDODatabaseSheet sheet, DatabaseColumn column, DatabaseRow row)
         {
             Sheet = sheet;
             Column = column;
@@ -20,7 +20,7 @@ namespace EithonBot.Spreadsheet.Models
             CellReference = $"{sheet.Name}!{column.ColumnLetters}{row.RowNumber}";
         }
 
-        public DatabaseField(DatabaseSheet sheet, DatabaseColumn column, DatabaseRow row, string cellValue)
+        public DatabaseField(BDODatabaseSheet sheet, DatabaseColumn column, DatabaseRow row, string cellValue)
         {
             Sheet = sheet;
             Column = column;
